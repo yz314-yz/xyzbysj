@@ -1,0 +1,43 @@
+# Flutter
+.dart_tool/
+.packages
+.pub-cache/
+.build/
+.flutter-plugins
+.flutter-plugins-dependencies
+android/
+ios/
+linux/
+macos/
+windows/
+build/
+lib/generated_plugin_registrant.dart
+
+# Android
+*.key
+*.keystore
+!debug.keystore
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.DS_Store
+
+# Node.js / 后端
+node_modules/
+jetlag-backend/node_modules/
+jetlag-backend/.env
+jetlag-backend/uploads/
+jetlag-backend/dist/
+jetlag-backend/.serverless/
+*.log
+
+# Flutter SDK
+flutter-sdk/
+
+# 系统文件
+Thumbs.db
+desktop.ini

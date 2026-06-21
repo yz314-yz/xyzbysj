@@ -1,0 +1,17 @@
+{
+  "name": "jetlag-sync-backend",
+  "version": "1.0.0",
+  "description": "JetLag Sync - 时差修复局后端服务 (Node.js + Express + DeepSeek)",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "multer": "^2.2.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "openai": "^4.85.4"
+  }
+}

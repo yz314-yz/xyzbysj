@@ -1,0 +1,46 @@
+# Reference template only.
+# Adapt this file based on the actual repository name, branch, Dockerfile path, build context, permissions, and image visibility.
+# Do not use blindly without checking the project files.
+
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:latest
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ env.IMAGE_NAME }}
+
+# If Hugging Face Space pulls from a private GHCR image, configure access permissions.
+# Public GHCR images are recommended for the simplest Hugging Face Docker Space setup.
+# GHCR repository and image names may need lowercase handling if the workflow fails.
+# Do not add a personal token unless the project explicitly requires it and the user configures it as a secret.

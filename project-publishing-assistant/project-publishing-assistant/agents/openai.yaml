@@ -1,0 +1,4 @@
+interface:
+  display_name: "Project Publishing Assistant"
+  short_description: "Guide projects from local code to public deployment"
+  default_prompt: "Use $project-publishing-assistant to review my project and guide me toward a public deployment."

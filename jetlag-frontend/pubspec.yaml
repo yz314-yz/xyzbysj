@@ -1,0 +1,22 @@
+name: jetlag_sync
+description: JetLag Sync - 时差修复局移动客户端
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  http: ^1.2.1
+  provider: ^6.1.2
+  flutter_markdown: ^0.7.3
+  image_picker: ^1.1.2
+
+dev_dependencies:
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
