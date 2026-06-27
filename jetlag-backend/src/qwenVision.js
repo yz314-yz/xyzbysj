@@ -4,7 +4,7 @@ const { OpenAI } = require('openai');
 const DEFAULT_QWEN_MODEL = 'Qwen/Qwen3-VL-8B-Instruct';
 
 function getVisionProviderStatus() {
-  const baseURL = process.env.OPEN_MODEL_BASE_URL || '';
+  const baseURL = (process.env.OPEN_MODEL_BASE_URL || '').trim();
   const model = process.env.OPEN_MODEL_NAME || DEFAULT_QWEN_MODEL;
   const enabled = Boolean(baseURL);
 

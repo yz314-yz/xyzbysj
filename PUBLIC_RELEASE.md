@@ -1,6 +1,6 @@
 # 正式公网发布路线：GitHub -> GHCR -> Hugging Face Docker Space
 
-本文件对应 `project-publishing-assistant` Skill 的 **B. 正式公网发布模式**。
+本文件说明当前作品的正式公网发布方案，适用于毕业设计答辩和 Trae Solo 创作者比赛提交。
 
 ## 已识别项目结构
 

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   Activity,
@@ -11,7 +11,7 @@ import {
   Leaf,
   Moon,
   ScanEye,
-  RefreshCcw,
+  RotateCcw,
   Soup,
   Sprout,
   Upload,
@@ -19,9 +19,15 @@ import {
 import './styles.css';
 
 const runtimeConfig = window.__APP_CONFIG__ || {};
-const API_BASE = Object.prototype.hasOwnProperty.call(runtimeConfig, 'API_BASE')
-  ? runtimeConfig.API_BASE
-  : import.meta.env.VITE_API_BASE || 'http://localhost:3000';
+const runtimeApiBase = typeof runtimeConfig.API_BASE === 'string' ? runtimeConfig.API_BASE.trim() : '';
+const API_BASE = runtimeApiBase || import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:3000' : '');
+
+const navItems = [
+  { id: 'collection', label: '望诊采集', icon: Leaf },
+  { id: 'constitution', label: '体质评估', icon: HeartPulse },
+  { id: 'plan', label: '七日计划', icon: CalendarDays },
+  { id: 'meridian', label: '子午流注', icon: Clock3 },
+];
 
 const symptomOptions = [
   ['dry_mouth', '口干咽燥'],
@@ -40,35 +46,48 @@ const symptomOptions = [
   ['bitter', '口苦口黏'],
 ];
 
-const demoResult = {
+const emptyResult = {
+  mode: 'local-rules',
+  engineStatus: {
+    rules: {
+      enabled: true,
+      provider: '本地规则引擎',
+      active: true,
+      role: '根据症状、采集项和子午流注生成体质方向与七日养生计划。',
+    },
+    vision: {
+      provider: 'Qwen3-VL',
+      model: 'Qwen/Qwen3-VL-8B-Instruct',
+      configured: false,
+      active: false,
+      baseURL: '未配置',
+      fallbackReason: 'Qwen3-VL 模型未配置，已使用本地规则引擎生成养生方案。',
+    },
+  },
   disclaimer: 'AI 分析仅供学术展示与日常养生参考，不能替代执业医师诊断、治疗或处方。',
   observation: {
     tongue: '舌像待采集：建议在自然光下平拍，避免美颜和强滤镜。',
     face: '面相待采集：建议正脸、自然光、无遮挡拍摄。',
     palm: '手相待采集：建议掌心展开、光线均匀拍摄。',
   },
-  selectedSymptoms: ['口干咽燥', '入睡困难或多梦', '疲倦乏力'],
+  selectedSymptoms: [],
   constitution: {
-    primary: '阴液不足，虚火偏扰',
-    secondary: ['心神失养，睡眠节律紊乱', '气血不足，推动无力'],
-    explanation: '偏向津液耗伤，常见口干、眼干、舌红少津。',
-    confidence: 78,
-    primaryCare: '养阴生津，减少辛辣煎炸和连续熬夜。',
+    primary: '等待生成评估',
+    secondary: [],
+    explanation: '请选择症状并按需上传图像，系统会生成体质方向与七日养生计划。',
+    confidence: 0,
+    primaryCare: '',
   },
-  meridian: { name: '亥时', meridian: '三焦经', advice: '宜洗漱泡脚，准备入睡。' },
+  meridian: { name: '', meridian: '', advice: '' },
   immediateActions: [
-    '现在处于亥时，三焦经当令：宜洗漱泡脚，准备入睡。',
-    '今日饮食以“银耳百合羹”为主线，少辛辣、少冰饮、不过饱。',
-    '今日运动选择“八段锦‘两手托天理三焦’”，以微汗或身心放松为度。',
-    '睡前 30 分钟停止高刺激内容，泡脚 10 分钟后做腹式呼吸。',
+    '尚未生成方案。请先完成症状选择、基础信息或图像采集。',
   ],
   qwenVision: null,
-  sevenDayPlan: [
-    ['第 1 天', '清心降火', '莲子百合粥 + 清炒菠菜 + 冬瓜汤', '八段锦 15 分钟，内关穴各 1 分钟', '22:30 上床，睡前 30 分钟离屏'],
-    ['第 2 天', '健脾和胃', '山药小米粥 + 胡萝卜鸡丝 + 陈皮水', '饭后慢走 20 分钟，摩腹 5 分钟', '午休 20 分钟，晚餐七分饱'],
-    ['第 3 天', '疏肝理气', '荞麦面 + 佛手瓜炒蛋 + 玫瑰陈皮茶', '扩胸运动 3 组，太冲穴各 2 分钟', '21:30 后只做轻任务'],
-  ].map(([day, theme, diet, exercise, sleep]) => ({ day, theme, diet, exercise, sleep })),
+  sevenDayPlan: [],
 };
+
+const emptyProfile = { age: '', gender: '', bedtime: '', wakeTime: '' };
+const emptyFiles = { tongue: null, face: null, palm: null };
 
 function FileDrop({ id, title, hint, icon: Icon, file, onChange }) {
   return (
@@ -84,6 +103,17 @@ function FileDrop({ id, title, hint, icon: Icon, file, onChange }) {
 
 function VisionPanel({ result }) {
   const parsed = result.qwenVision?.parsed;
+  const visionStatus = result.engineStatus?.vision;
+  const statusText = parsed
+    ? result.qwenVision.model
+    : visionStatus?.configured
+      ? '模型已配置'
+      : '本地规则已接管';
+  const statusDetail = result.modelVisionError
+    || (parsed
+      ? 'Qwen3-VL 已返回图像特征，本地规则引擎已参与方案生成。'
+      : visionStatus?.fallbackReason || '当前使用本地规则引擎生成养生方案。');
+  const fallbackReference = visionStatus?.fallbackReason || '当前使用本地规则引擎记录采集状态。';
   const items = parsed
     ? [
         ['舌像', parsed.tongue?.features || [], parsed.tongue?.tcm_reference],
@@ -91,14 +121,22 @@ function VisionPanel({ result }) {
         ['手相', parsed.palm?.features || [], parsed.palm?.tcm_reference],
       ]
     : [
-        ['舌像', [result.observation.tongue], '等待 Qwen3-VL 图像识别或使用本地规则记录。'],
-        ['面相', [result.observation.face], '等待 Qwen3-VL 图像识别或使用本地规则记录。'],
-        ['手相', [result.observation.palm], '等待 Qwen3-VL 图像识别或使用本地规则记录。'],
+        ['舌像', [result.observation.tongue], fallbackReference],
+        ['面相', [result.observation.face], fallbackReference],
+        ['手相', [result.observation.palm], fallbackReference],
       ];
 
   return (
     <section className="panel vision-panel">
-      <div className="section-title"><ScanEye size={20} /><h2>Qwen3-VL 图像特征</h2><span>{parsed ? result.qwenVision.model : '未连接'}</span></div>
+      <div className="section-title">
+        <ScanEye size={20} />
+        <h2>Qwen3-VL 图像特征</h2>
+        <span className={`status-pill ${parsed ? 'is-model' : 'is-rules'}`}>{statusText}</span>
+      </div>
+      <div className={`engine-banner ${parsed ? 'is-model' : 'is-rules'}`}>
+        <Check size={16} />
+        <span>{statusDetail}</span>
+      </div>
       <div className="feature-list">
         {items.map(([title, features, reference]) => (
           <article key={title}>
@@ -113,15 +151,46 @@ function VisionPanel({ result }) {
 }
 
 function App() {
-  const [selected, setSelected] = useState(['dry_mouth', 'insomnia', 'fatigue']);
-  const [files, setFiles] = useState({ tongue: null, face: null, palm: null });
-  const [profile, setProfile] = useState({ age: '22', gender: '女', bedtime: '01:00', wakeTime: '08:30' });
-  const [result, setResult] = useState(demoResult);
+  const [selected, setSelected] = useState([]);
+  const [files, setFiles] = useState(emptyFiles);
+  const [profile, setProfile] = useState(emptyProfile);
+  const [result, setResult] = useState(emptyResult);
   const [loading, setLoading] = useState(false);
+  const [activeSection, setActiveSection] = useState('collection');
   const completion = useMemo(() => Math.round((selected.length / symptomOptions.length) * 100), [selected]);
+
+  useEffect(() => {
+    const sections = navItems
+      .map((item) => document.getElementById(item.id))
+      .filter(Boolean);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible?.target?.id) setActiveSection(visible.target.id);
+      },
+      { rootMargin: '-20% 0px -55% 0px', threshold: [0.1, 0.35, 0.6] }
+    );
+
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, []);
 
   function toggleSymptom(id) {
     setSelected((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
+  }
+
+  function goToSection(id) {
+    setActiveSection(id);
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function resetForm() {
+    setSelected([]);
+    setFiles(emptyFiles);
+    setProfile(emptyProfile);
+    setResult(emptyResult);
   }
 
   async function submit() {
@@ -154,10 +223,16 @@ function App() {
       <aside className="sidebar">
         <div className="brand"><span>岐</span><div><strong>岐养七日</strong><small>中医养生辅助系统</small></div></div>
         <nav>
-          <a className="active"><Leaf size={18} /> 望诊采集</a>
-          <a><HeartPulse size={18} /> 体质评估</a>
-          <a><CalendarDays size={18} /> 七日计划</a>
-          <a><Clock3 size={18} /> 子午流注</a>
+          {navItems.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              className={activeSection === id ? 'active' : ''}
+              type="button"
+              onClick={() => goToSection(id)}
+            >
+              <Icon size={18} /> {label}
+            </button>
+          ))}
         </nav>
         <p className="notice">毕业设计演示版本：以图像特征记录、症状归类和养生计划生成为核心，不提供医疗诊断。</p>
       </aside>
@@ -168,11 +243,11 @@ function App() {
             <h1>望诊与七日养生计划</h1>
             <p>上传舌像、面相、手相，结合症状生成饮食、运动与作息建议。</p>
           </div>
-          <button className="ghost" onClick={() => setResult(demoResult)}><RefreshCcw size={16} /> 恢复示例</button>
+          <button className="ghost" onClick={resetForm}><RotateCcw size={16} /> 清空表单</button>
         </header>
 
         <div className="grid">
-          <section className="panel collector">
+          <section className="panel collector" id="collection">
             <div className="section-title"><Camera size={20} /><h2>图像采集</h2><span>{Object.values(files).filter(Boolean).length}/3</span></div>
             <div className="drops">
               <FileDrop id="tongue" title="舌像" hint="自然光、伸舌平拍" icon={Upload} file={files.tongue} onChange={(file) => setFiles({ ...files, tongue: file })} />
@@ -206,7 +281,7 @@ function App() {
             </button>
           </section>
 
-          <section className="panel result-card">
+          <section className="panel result-card" id="constitution">
             <div className="score-ring"><span>{result.constitution.confidence}</span><small>匹配度</small></div>
             <div>
               <p className="label">主要调理方向</p>
@@ -216,15 +291,15 @@ function App() {
             </div>
           </section>
 
-          <section className="panel actions">
-            <div className="section-title"><FlameKindling size={20} /><h2>今日补救窗口</h2></div>
+          <section className="panel actions" id="meridian">
+            <div className="section-title"><FlameKindling size={20} /><h2>子午流注与今日补救窗口</h2></div>
             {result.immediateActions.map((item) => <p key={item}>{item}</p>)}
           </section>
 
           <VisionPanel result={result} />
         </div>
 
-        <section className="plan panel">
+        <section className="plan panel" id="plan">
           <div className="section-title"><CalendarDays size={20} /><h2>七日计划表</h2><span>食谱 / 体操 / 作息</span></div>
           <div className="table">
             <div className="thead"><span>日期</span><span>主题</span><span><Soup size={15} /> 食谱计划</span><span><Activity size={15} /> 运动体操</span><span><Moon size={15} /> 作息计划</span></div>
@@ -233,6 +308,9 @@ function App() {
                 <b>{row.day}</b><strong>{row.theme}</strong><span>{row.diet}</span><span>{row.exercise}</span><span>{row.sleep}</span>
               </div>
             ))}
+            {!result.sevenDayPlan.length && (
+              <div className="empty-row">生成方案后，这里会显示 7 天的食谱、运动和作息安排。</div>
+            )}
           </div>
         </section>
 

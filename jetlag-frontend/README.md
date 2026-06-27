@@ -1,17 +1,20 @@
-# jetlag_sync
+# 岐养七日前端
 
-A new Flutter project.
+当前前端为 Vite + React 实现，用于毕业设计演示和 Trae Solo 创作者比赛提交。
 
-## Getting Started
+## 本地运行
 
-This project is a starting point for a Flutter application.
+```bash
+npm install
+npm run dev
+```
 
-A few resources to get you started if this is your first Flutter project:
+默认会读取 `VITE_API_BASE` 或后端输出的 `/env.js`，开发环境未配置时回退到 `http://localhost:3000`。
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## 构建
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```bash
+npm run build
+```
+
+构建产物位于 `dist/`，提交源码时不需要包含。

@@ -160,6 +160,39 @@ function buildObservationCopy(observation, qwenVision) {
   };
 }
 
+function buildEngineStatus(provider, observation, qwenVision) {
+  const hasImage = Boolean(observation.tongue || observation.face || observation.palm);
+  const hasVisionResult = Boolean(qwenVision?.parsed);
+  let fallbackReason = null;
+
+  if (!hasVisionResult) {
+    if (!hasImage) {
+      fallbackReason = '未上传图像，本次仅使用本地规则引擎生成养生方案。';
+    } else if (!provider.enabled) {
+      fallbackReason = 'Qwen3-VL 模型未配置，已使用本地规则引擎生成养生方案。';
+    } else {
+      fallbackReason = '未获得可解析的 Qwen3-VL 图像特征，已使用本地规则引擎生成养生方案。';
+    }
+  }
+
+  return {
+    rules: {
+      enabled: true,
+      provider: '本地规则引擎',
+      active: true,
+      role: '根据症状、采集项和子午流注生成体质方向与七日养生计划。',
+    },
+    vision: {
+      provider: provider.provider,
+      model: provider.model,
+      configured: provider.enabled,
+      active: hasVisionResult,
+      baseURL: provider.baseURL,
+      fallbackReason,
+    },
+  };
+}
+
 function buildAnalysis({ selectedSymptoms, observation, hour, profile, qwenVision }) {
   const ranked = scorePatterns(selectedSymptoms, observation, qwenVision?.featureText);
   const primary = ranked[0] || { id: 'spleenDeficiency', score: 1, ...patternMeta.spleenDeficiency };
@@ -172,6 +205,7 @@ function buildAnalysis({ selectedSymptoms, observation, hour, profile, qwenVisio
 
   return {
     mode: qwenVision?.parsed ? 'qwen3-vl-plus-rules' : 'local-rules',
+    engineStatus: buildEngineStatus(provider, observation, qwenVision),
     disclaimer: 'AI 分析仅供学术展示与日常养生参考，不能替代执业医师诊断、治疗或处方。',
     profile: {
       age: profile.age || '',
@@ -230,6 +264,8 @@ app.get('/health', (req, res) => {
     service: '中医养生辅助系统',
     qwen3VLReady: provider.enabled,
     qwen3VLModel: provider.model,
+    localRuleEngineReady: true,
+    activeMode: provider.enabled ? 'qwen3-vl-configured-plus-local-rules' : 'local-rules',
     time: new Date().toISOString(),
   });
 });
