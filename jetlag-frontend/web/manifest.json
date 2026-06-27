@@ -1,0 +1,35 @@
+{
+    "name": "时差修复局",
+    "short_name": "JetLag Sync",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#0B0F19",
+    "theme_color": "#059669",
+    "description": "跨时区健康管理应用 - 中医望诊 + AI诊断",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}

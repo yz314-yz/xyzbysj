@@ -1,0 +1,28 @@
+name: tcm-wellness
+
+services:
+  backend:
+    build:
+      context: ./jetlag-backend
+    container_name: tcm-wellness-backend
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      OPEN_MODEL_BASE_URL: ${OPEN_MODEL_BASE_URL:-}
+      OPEN_MODEL_API_KEY: ${OPEN_MODEL_API_KEY:-EMPTY}
+      OPEN_MODEL_NAME: ${OPEN_MODEL_NAME:-Qwen/Qwen3-VL-8B-Instruct}
+      CORS_ORIGIN: ${CORS_ORIGIN:-}
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+
+  frontend:
+    build:
+      context: ./jetlag-frontend
+    container_name: tcm-wellness-frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_BASE: ${PUBLIC_API_BASE:-http://localhost:3000}
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      - backend

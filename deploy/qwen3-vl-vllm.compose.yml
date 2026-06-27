@@ -1,0 +1,35 @@
+name: qwen3-vl
+
+services:
+  qwen3-vl:
+    image: vllm/vllm-openai:latest
+    container_name: qwen3-vl-openai
+    restart: unless-stopped
+    ipc: host
+    ports:
+      - "${QWEN_PORT:-8000}:8000"
+    environment:
+      HF_HOME: /root/.cache/huggingface
+      HUGGING_FACE_HUB_TOKEN: ${HUGGING_FACE_HUB_TOKEN:-}
+    volumes:
+      - qwen3_vl_hf_cache:/root/.cache/huggingface
+    command:
+      - --model
+      - ${OPEN_MODEL_NAME:-Qwen/Qwen3-VL-8B-Instruct}
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --served-model-name
+      - ${OPEN_MODEL_NAME:-Qwen/Qwen3-VL-8B-Instruct}
+      - --trust-remote-code
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+volumes:
+  qwen3_vl_hf_cache:

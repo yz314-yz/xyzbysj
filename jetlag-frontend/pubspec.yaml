@@ -1,5 +1,5 @@
 name: jetlag_sync
-description: JetLag Sync - 时差修复局移动客户端
+description: TCM Vision Assistant - 中医望诊辅助系统
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -10,10 +10,10 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.6
-  http: ^1.2.1
-  provider: ^6.1.2
-  flutter_markdown: ^0.7.3
-  image_picker: ^1.1.2
+  camera: ^0.11.0+2
+  camera_windows: ^0.2.6+4
+  google_fonts: ^6.2.1
+  perfect_freehand: ^2.0.0
 
 dev_dependencies:
   flutter_lints: ^4.0.0

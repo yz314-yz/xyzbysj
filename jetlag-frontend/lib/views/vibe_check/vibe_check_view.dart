@@ -1,6 +1,5 @@
-import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
-import 'package:flutter/material.dart' show Colors;
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -8,6 +7,7 @@ import 'package:jetlag_sync/services/api_service.dart';
 import 'package:jetlag_sync/models/symptom.dart';
 import 'package:jetlag_sync/theme/app_theme.dart';
 import 'package:jetlag_sync/views/sync_blueprint/sync_blueprint_view.dart';
+import 'package:jetlag_sync/widgets/sketch/sketch_widgets.dart';
 
 class VibeCheckView extends StatefulWidget {
   const VibeCheckView({super.key});
@@ -39,26 +39,11 @@ class _VibeCheckViewState extends State<VibeCheckView> {
       navigationBar: CupertinoNavigationBar(
         backgroundColor: AppTheme.surface,
         border: null,
-        middle: const Column(
+        middle: Column(
           children: [
-            Text(
-              '望诊中心',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.primaryText,
-              ),
-            ),
-            SizedBox(height: 2),
-            Text(
-              'FACE & TONGUE DIAGNOSIS',
-              style: TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.sage,
-                letterSpacing: 0.15,
-              ),
-            ),
+            Text('望诊中心', style: SketchFonts.title(size: 22, color: AppTheme.ink)),
+            const SizedBox(height: 2),
+            Text('FACE & TONGUE DIAGNOSIS', style: SketchFonts.tag(size: 9, color: AppTheme.excalGreen, letterSpacing: 0.3)),
           ],
         ),
       ),
@@ -67,42 +52,42 @@ class _VibeCheckViewState extends State<VibeCheckView> {
           slivers: [
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                 child: _buildStepIndicator(),
               ),
             ),
             if (_currentStep == 0)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
                   child: _buildFacePhotoCard(),
                 ),
               ),
             if (_currentStep == 1)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
                   child: _buildTonguePhotoCard(),
                 ),
               ),
             if (_currentStep == 2)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
                   child: _buildSymptomsList(),
                 ),
               ),
             if (_currentStep == 3)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
                   child: _buildSummary(),
                 ),
               ),
             SliverFillRemaining(
               hasScrollBody: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 24, 24, 36),
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 36),
                 child: _buildBottomButton(),
               ),
             ),
@@ -112,53 +97,39 @@ class _VibeCheckViewState extends State<VibeCheckView> {
     );
   }
 
+  /// 手绘风步骤指示器
   Widget _buildStepIndicator() {
     return Row(
       children: [
         for (int i = 0; i < _steps.length; i++) ...[
           Column(
             children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: i <= _currentStep ? AppTheme.primaryText : AppTheme.cardSurface,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: i == _currentStep ? AppTheme.sage : Colors.transparent,
-                    width: i == _currentStep ? 2 : 0,
-                  ),
-                ),
-                child: Center(
-                  child: Text(
-                    '${i + 1}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: i <= _currentStep ? CupertinoColors.white : AppTheme.secondaryText,
-                    ),
-                  ),
-                ),
+              _SketchStepDot(
+                index: i + 1,
+                active: i == _currentStep,
+                done: i < _currentStep,
+                seed: i + 1,
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Text(
                 _steps[i]['title']!,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: i <= _currentStep ? AppTheme.primaryText : AppTheme.secondaryText,
+                style: SketchFonts.body(
+                  size: 11,
+                  color: i <= _currentStep ? AppTheme.ink : AppTheme.secondaryText,
+                  weight: FontWeight.w600,
                 ),
               ),
             ],
           ),
           if (i < _steps.length - 1)
             Expanded(
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                height: 2,
-                decoration: BoxDecoration(
-                  color: i < _currentStep ? AppTheme.primaryText : AppTheme.outlineVariant,
-                  borderRadius: BorderRadius.circular(1),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 18),
+                child: SketchDivider(
+                  color: i < _currentStep ? AppTheme.excalGreen : AppTheme.outlineVariant,
+                  seed: 50 + i,
+                  height: 8,
+                  strokeWidth: i < _currentStep ? 1.8 : 1.2,
                 ),
               ),
             ),
@@ -171,22 +142,18 @@ class _VibeCheckViewState extends State<VibeCheckView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          '第一步：面部望诊',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-        ),
+        Text('第一步：面部望诊', style: SketchFonts.title(size: 22, color: AppTheme.ink)),
         const SizedBox(height: 4),
-        const Text(
-          'AI 分析面色、眼神、黑眼圈等信息',
-          style: TextStyle(fontSize: 13, color: AppTheme.secondaryText),
-        ),
+        Text('AI 分析面色、眼神、黑眼圈等信息', style: SketchFonts.body(size: 13, color: AppTheme.secondaryText)),
         const SizedBox(height: 16),
         _photoCard(
           label: '面部照片',
           hint: '请正面拍摄，光线充足',
           imageBytes: _faceBytes,
           onTap: () => _pickPhoto('face'),
-          color: const Color(0xFFE8853A),
+          color: AppTheme.excalOrange,
+          emoji: '🙂',
+          seed: 101,
         ),
       ],
     );
@@ -196,22 +163,18 @@ class _VibeCheckViewState extends State<VibeCheckView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          '第二步：舌象望诊',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-        ),
+        Text('第二步：舌象望诊', style: SketchFonts.title(size: 22, color: AppTheme.ink)),
         const SizedBox(height: 4),
-        const Text(
-          'AI 分析舌质、舌苔、舌下静脉',
-          style: TextStyle(fontSize: 13, color: AppTheme.secondaryText),
-        ),
+        Text('AI 分析舌质、舌苔、舌下静脉', style: SketchFonts.body(size: 13, color: AppTheme.secondaryText)),
         const SizedBox(height: 16),
         _photoCard(
           label: '舌苔照片',
           hint: '张大嘴，伸出舌头，光线充足',
           imageBytes: _tongueBytes,
           onTap: () => _pickPhoto('tongue'),
-          color: const Color(0xFF059669),
+          color: AppTheme.excalGreen,
+          emoji: '👅',
+          seed: 102,
         ),
       ],
     );
@@ -223,88 +186,77 @@ class _VibeCheckViewState extends State<VibeCheckView> {
     required Uint8List? imageBytes,
     required VoidCallback onTap,
     required Color color,
+    required String emoji,
+    required int seed,
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        height: 140,
-        decoration: BoxDecoration(
-          color: AppTheme.cardSurface,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: imageBytes != null ? color : AppTheme.outlineVariant,
-            width: imageBytes != null ? 2 : 1,
-          ),
-        ),
-        child: imageBytes != null
-            ? ClipRRect(
-                borderRadius: BorderRadius.circular(17),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Image.memory(imageBytes, fit: BoxFit.cover),
-                    Positioned(
-                      top: 10,
-                      right: 10,
-                      child: GestureDetector(
-                        onTap: () => setState(() {
-                          if (label == '面部照片') _faceBytes = null;
-                          else _tongueBytes = null;
-                        }),
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryText.withValues(alpha: 0.6),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(CupertinoIcons.xmark, size: 14, color: CupertinoColors.white),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 10,
-                      left: 10,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(8)),
-                        child: Text(
-                          '已拍摄 $label',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: CupertinoColors.white),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(CupertinoIcons.camera_fill, size: 28, color: color),
-                  ),
-                  const SizedBox(width: 16),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+      child: SketchCard(
+        seed: seed,
+        borderColor: imageBytes != null ? color : AppTheme.ink,
+        fillColor: AppTheme.cardSurface,
+        strokeWidth: imageBytes != null ? 2.0 : 1.5,
+        cornerRadius: 16,
+        padding: EdgeInsets.zero,
+        child: SizedBox(
+          height: 140,
+          child: imageBytes != null
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(15),
+                  child: Stack(
+                    fit: StackFit.expand,
                     children: [
-                      Text(
-                        '拍摄 $label',
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                      Image.memory(imageBytes, fit: BoxFit.cover),
+                      Positioned(
+                        top: 10,
+                        right: 10,
+                        child: GestureDetector(
+                          onTap: () => setState(() {
+                            if (label == '面部照片') _faceBytes = null;
+                            else _tongueBytes = null;
+                          }),
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: const BoxDecoration(
+                              color: Color(0xCC1E1E1E),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(CupertinoIcons.xmark, size: 14, color: Color(0xFFFFFEF7)),
+                          ),
+                        ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        hint,
-                        style: const TextStyle(fontSize: 12, color: AppTheme.secondaryText),
+                      Positioned(
+                        bottom: 10,
+                        left: 10,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text('已拍摄 $label', style: SketchFonts.body(size: 11, color: const Color(0xFFFFFEF7), weight: FontWeight.w700)),
+                        ),
                       ),
                     ],
                   ),
-                ],
-              ),
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SketchBadge(emoji: emoji, color: color, size: 56, seed: seed + 5),
+                    const SizedBox(width: 16),
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('拍摄 $label', style: SketchFonts.title(size: 18, color: AppTheme.ink)),
+                        const SizedBox(height: 4),
+                        Text(hint, style: SketchFonts.body(size: 12, color: AppTheme.secondaryText)),
+                      ],
+                    ),
+                  ],
+                ),
+        ),
       ),
     );
   }
@@ -313,15 +265,10 @@ class _VibeCheckViewState extends State<VibeCheckView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          '第三步：症状选择',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-        ),
+        Text('第三步：症状选择', style: SketchFonts.title(size: 22, color: AppTheme.ink)),
         const SizedBox(height: 4),
-        Text(
-          '已选 ${_selectedSymptoms.length} 项 · 按分类快速定位',
-          style: const TextStyle(fontSize: 13, color: AppTheme.secondaryText),
-        ),
+        Text('已选 ${_selectedSymptoms.length} 项 · 按分类快速定位',
+            style: SketchFonts.body(size: 13, color: AppTheme.secondaryText)),
         const SizedBox(height: 16),
         ..._buildGroupedChips(),
       ],
@@ -331,12 +278,12 @@ class _VibeCheckViewState extends State<VibeCheckView> {
   List<Widget> _buildGroupedChips() {
     final categories = <String>['伤津耗液', '伤气血', '伤心神', '伤精', '伤脾', '全身'];
     final colors = <Color>[
-      const Color(0xFFE8853A),
-      const Color(0xFFDC2626),
-      const Color(0xFF7C3AED),
-      const Color(0xFF059669),
-      const Color(0xFFD97706),
-      const Color(0xFF64748B),
+      AppTheme.excalOrange,
+      AppTheme.excalRed,
+      AppTheme.excalViolet,
+      AppTheme.excalGreen,
+      AppTheme.amber,
+      AppTheme.secondaryText,
     ];
     final widgets = <Widget>[];
     for (int i = 0; i < categories.length; i++) {
@@ -347,12 +294,10 @@ class _VibeCheckViewState extends State<VibeCheckView> {
           padding: const EdgeInsets.only(bottom: 8, top: 4),
           child: Row(
             children: [
-              Container(width: 4, height: 12, decoration: BoxDecoration(color: colors[i], borderRadius: BorderRadius.circular(2))),
+              SketchBadge(emoji: '◆', color: colors[i], size: 16, seed: i + 200),
               const SizedBox(width: 6),
-              Text(
-                categories[i],
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.secondaryText.withValues(alpha: 0.8), letterSpacing: 0.05),
-              ),
+              Text(categories[i],
+                  style: SketchFonts.tag(size: 11, color: colors[i], letterSpacing: 0.3)),
             ],
           ),
         ),
@@ -361,32 +306,20 @@ class _VibeCheckViewState extends State<VibeCheckView> {
           runSpacing: 8,
           children: items.map((s) {
             final isSelected = _selectedSymptoms.contains(s.id);
-            return GestureDetector(
+            return SketchChip(
+              label: s.label,
+              emoji: s.emoji,
+              selected: isSelected,
+              color: colors[i],
+              seed: s.label.hashCode % 100,
               onTap: () => setState(() {
                 if (isSelected) _selectedSymptoms.remove(s.id);
                 else _selectedSymptoms.add(s.id);
               }),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOut,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isSelected ? colors[i].withValues(alpha: 0.15) : AppTheme.cardSurface,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: isSelected ? colors[i] : AppTheme.outlineVariant, width: 1),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(s.emoji, style: const TextStyle(fontSize: 13)),
-                    const SizedBox(width: 5),
-                    Text(s.label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: isSelected ? colors[i] : AppTheme.primaryText)),
-                  ],
-                ),
-              ),
             );
           }).toList(),
         ),
+        const SizedBox(height: 8),
       ]);
     }
     return widgets;
@@ -402,7 +335,7 @@ class _VibeCheckViewState extends State<VibeCheckView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('诊断就绪', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+        Text('诊断就绪', style: SketchFonts.title(size: 24, color: AppTheme.ink)),
         const SizedBox(height: 16),
         _summaryRow('面部照片', _faceBytes != null ? '已拍摄' : '未拍摄', _faceBytes != null),
         _summaryRow('舌苔照片', _tongueBytes != null ? '已拍摄' : '未拍摄', _tongueBytes != null),
@@ -415,22 +348,20 @@ class _VibeCheckViewState extends State<VibeCheckView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('症状选择', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                    Text('症状选择', style: SketchFonts.body(size: 14, color: AppTheme.ink, weight: FontWeight.w600)),
                     const SizedBox(height: 6),
                     if (selectedLabels.isEmpty)
-                      const Text('尚未选择症状', style: TextStyle(fontSize: 12, color: AppTheme.secondaryText))
+                      Text('尚未选择症状', style: SketchFonts.body(size: 12, color: AppTheme.secondaryText))
                     else
                       Wrap(
                         spacing: 6,
                         runSpacing: 6,
                         children: selectedLabels
-                            .map((label) => Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.sage.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.sage)),
+                            .map((label) => SketchChip(
+                                  label: label,
+                                  selected: true,
+                                  color: AppTheme.excalGreen,
+                                  seed: label.hashCode % 100,
                                 ))
                             .toList(),
                       ),
@@ -438,27 +369,36 @@ class _VibeCheckViewState extends State<VibeCheckView> {
                 ),
               ),
               const SizedBox(width: 12),
-              Icon(selectedLabels.isNotEmpty ? CupertinoIcons.check_mark_circled : CupertinoIcons.circle, size: 14, color: selectedLabels.isNotEmpty ? AppTheme.sage : AppTheme.secondaryText.withValues(alpha: 0.4)),
+              Icon(
+                selectedLabels.isNotEmpty ? CupertinoIcons.check_mark_circled : CupertinoIcons.circle,
+                size: 16,
+                color: selectedLabels.isNotEmpty ? AppTheme.excalGreen : AppTheme.secondaryText.withValues(alpha: 0.4),
+              ),
             ],
           ),
         ),
         const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: hasAnyInput ? AppTheme.sage.withValues(alpha: 0.08) : const Color(0xFFFFF3CD),
-            borderRadius: BorderRadius.circular(14),
-          ),
+        SketchCard(
+          seed: 333,
+          borderColor: hasAnyInput ? AppTheme.excalGreen : AppTheme.excalOrange,
+          fillColor: hasAnyInput ? AppTheme.excalGreen.withValues(alpha: 0.08) : AppTheme.excalOrange.withValues(alpha: 0.08),
+          strokeWidth: 1.5,
+          cornerRadius: 12,
+          padding: const EdgeInsets.all(14),
           child: Row(
             children: [
-              Icon(hasAnyInput ? CupertinoIcons.info_circle : CupertinoIcons.exclamationmark_triangle_fill, size: 18, color: hasAnyInput ? AppTheme.sage : const Color(0xFFB45309)),
+              Icon(
+                hasAnyInput ? CupertinoIcons.info : CupertinoIcons.exclamationmark_triangle_fill,
+                size: 18,
+                color: hasAnyInput ? AppTheme.excalGreen : AppTheme.excalOrange,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   hasAnyInput
                       ? 'AI 将综合望诊与症状分析，生成专属修复蓝图'
                       : '请至少完成一项：拍摄照片 或 选择症状',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.primaryText),
+                  style: SketchFonts.body(size: 13, color: AppTheme.ink, weight: FontWeight.w600),
                 ),
               ),
             ],
@@ -466,23 +406,20 @@ class _VibeCheckViewState extends State<VibeCheckView> {
         ),
         if (_errorMessage != null) ...[
           const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFEE2E2),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFDC2626).withValues(alpha: 0.2)),
-            ),
+          SketchCard(
+            seed: 334,
+            borderColor: AppTheme.excalRed,
+            fillColor: AppTheme.excalRed.withValues(alpha: 0.06),
+            strokeWidth: 1.5,
+            cornerRadius: 12,
+            padding: const EdgeInsets.all(14),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(CupertinoIcons.exclamationmark_triangle_fill, size: 18, color: Color(0xFFDC2626)),
+                const Icon(CupertinoIcons.exclamationmark_triangle_fill, size: 18, color: AppTheme.excalRed),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Text(
-                    _errorMessage!,
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF991B1B), height: 1.4),
-                  ),
+                  child: Text(_errorMessage!, style: SketchFonts.body(size: 12, color: AppTheme.excalRed, height: 1.4)),
                 ),
               ],
             ),
@@ -498,12 +435,16 @@ class _VibeCheckViewState extends State<VibeCheckView> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+          Text(label, style: SketchFonts.body(size: 14, color: AppTheme.ink, weight: FontWeight.w600)),
           Row(
             children: [
-              Text(value, style: TextStyle(fontSize: 13, color: ok ? AppTheme.sage : AppTheme.secondaryText, fontWeight: FontWeight.w700)),
+              Text(value, style: SketchFonts.body(size: 13, color: ok ? AppTheme.excalGreen : AppTheme.secondaryText, weight: FontWeight.w700)),
               const SizedBox(width: 6),
-              Icon(ok ? CupertinoIcons.check_mark_circled : CupertinoIcons.circle, size: 14, color: ok ? AppTheme.sage : AppTheme.secondaryText.withValues(alpha: 0.4)),
+              Icon(
+                ok ? CupertinoIcons.check_mark_circled : CupertinoIcons.circle,
+                size: 14,
+                color: ok ? AppTheme.excalGreen : AppTheme.secondaryText.withValues(alpha: 0.4),
+              ),
             ],
           ),
         ],
@@ -516,6 +457,7 @@ class _VibeCheckViewState extends State<VibeCheckView> {
     final selectedLabels = Symptom.defaults.where((s) => _selectedSymptoms.contains(s.id)).map((s) => s.label).toList();
     final hasAnyInput = _faceBytes != null || _tongueBytes != null || selectedLabels.isNotEmpty;
     final canProceed = isLast ? hasAnyInput : true;
+    final disabled = _isLoading || !canProceed;
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
@@ -530,29 +472,31 @@ class _VibeCheckViewState extends State<VibeCheckView> {
                     setState(() => _currentStep++);
                   }
                 },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            height: 58,
-            decoration: BoxDecoration(
-              color: _isLoading || !canProceed
-                  ? AppTheme.primaryText.withValues(alpha: 0.3)
-                  : AppTheme.primaryText,
-              borderRadius: BorderRadius.circular(29),
-              boxShadow: _isLoading || !canProceed
-                  ? null
-                  : [BoxShadow(color: AppTheme.primaryText.withValues(alpha: 0.15), blurRadius: 16, offset: const Offset(0, 6))],
-            ),
+          child: SketchCard(
+            seed: 999,
+            borderColor: disabled ? AppTheme.secondaryText : AppTheme.ink,
+            fillColor: disabled ? AppTheme.secondaryText.withValues(alpha: 0.3) : AppTheme.ink,
+            strokeWidth: 2.0,
+            cornerRadius: 24,
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+            withShadow: !disabled,
             child: Center(
               child: _isLoading
-                  ? const CupertinoActivityIndicator(color: CupertinoColors.white)
+                  ? const CupertinoActivityIndicator(color: Color(0xFFFFFEF7))
                   : Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        if (isLast) const Icon(CupertinoIcons.bolt_fill, size: 16, color: CupertinoColors.white),
-                        SizedBox(width: isLast ? 8 : 0),
+                        if (isLast) ...[
+                          const Icon(CupertinoIcons.bolt_fill, size: 16, color: Color(0xFFFFFEF7)),
+                          const SizedBox(width: 8),
+                        ],
                         Text(
                           isLast ? '生成修复蓝图' : '继续 · 下一步',
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: CupertinoColors.white, letterSpacing: -0.01),
+                          style: SketchFonts.body(
+                            size: 16,
+                            color: const Color(0xFFFFFEF7),
+                            weight: FontWeight.w700,
+                          ),
                         ),
                       ],
                     ),
@@ -563,7 +507,7 @@ class _VibeCheckViewState extends State<VibeCheckView> {
           const SizedBox(height: 12),
           CupertinoButton(
             onPressed: _isLoading ? null : () => setState(() => _currentStep--),
-            child: const Text('上一步', style: TextStyle(fontSize: 13, color: AppTheme.secondaryText, fontWeight: FontWeight.w600)),
+            child: Text('上一步', style: SketchFonts.body(size: 13, color: AppTheme.secondaryText, weight: FontWeight.w600)),
           ),
         ],
       ],
@@ -727,4 +671,92 @@ class _VibeCheckViewState extends State<VibeCheckView> {
         '  ● 褪黑素节律：21:00后光线变暗开始分泌，23:00达到高峰\n'
         '  ● 说明：此方案为本地规则引擎生成。后端服务恢复后可获得AI个性化诊断。';
   }
+}
+
+/// 手绘风步骤圆点
+class _SketchStepDot extends StatelessWidget {
+  final int index;
+  final bool active;
+  final bool done;
+  final int seed;
+
+  const _SketchStepDot({
+    required this.index,
+    required this.active,
+    required this.done,
+    required this.seed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = done
+        ? AppTheme.excalGreen
+        : active
+            ? AppTheme.ink
+            : AppTheme.secondaryText;
+    return SizedBox(
+      width: 32,
+      height: 32,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CustomPaint(
+            painter: _SketchStepDotPainter(color: color, fill: active || done, seed: seed),
+            size: const Size(32, 32),
+          ),
+          Text(
+            '$index',
+            style: SketchFonts.numeric(
+              size: 14,
+              color: active || done ? const Color(0xFFFFFEF7) : AppTheme.secondaryText,
+              weight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SketchStepDotPainter extends CustomPainter {
+  final Color color;
+  final bool fill;
+  final int seed;
+
+  _SketchStepDotPainter({required this.color, required this.fill, required this.seed});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (fill) {
+      final fillPaint = Paint()..color = color..style = PaintingStyle.fill;
+      canvas.drawCircle(Offset(size.width / 2, size.height / 2), size.width / 2 - 2, fillPaint);
+    }
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.8
+      ..strokeCap = StrokeCap.round;
+
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 2;
+    final rng = math.Random(seed);
+    final segs = 28;
+    final path = Path();
+    for (int i = 0; i <= segs; i++) {
+      final a = (i / segs) * math.pi * 2;
+      final r = radius + (rng.nextDouble() - 0.5) * 1.0;
+      final x = center.dx + r * math.cos(a);
+      final y = center.dy + r * math.sin(a);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _SketchStepDotPainter old) =>
+      old.color != color || old.fill != fill || old.seed != seed;
 }

@@ -5,6 +5,7 @@ import 'package:jetlag_sync/views/vibe_check/vibe_check_view.dart';
 import 'package:jetlag_sync/views/environment/environment_view.dart';
 import 'package:jetlag_sync/views/meridians/meridians_view.dart';
 import 'package:jetlag_sync/views/sync_blueprint/sync_blueprint_view.dart';
+import 'package:jetlag_sync/views/sketchpad/sketchpad_view.dart';
 import 'package:jetlag_sync/services/api_service.dart';
 import 'package:jetlag_sync/theme/app_theme.dart';
 
@@ -25,7 +26,7 @@ class JetLagSyncApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CupertinoApp(
-      title: '时差修复局',
+      title: '时差修复局 · 手绘版',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.build(),
       home: const RootTabView(),
@@ -40,35 +41,40 @@ class RootTabView extends StatelessWidget {
   Widget build(BuildContext context) {
     return CupertinoTabScaffold(
       tabBar: CupertinoTabBar(
-        backgroundColor: AppTheme.surface.withValues(alpha: 0.92),
-        activeColor: AppTheme.primaryText,
-        inactiveColor: AppTheme.secondaryText.withValues(alpha: 0.5),
+        backgroundColor: AppTheme.cardSurface.withValues(alpha: 0.96),
+        activeColor: AppTheme.ink,
+        inactiveColor: AppTheme.secondaryText.withValues(alpha: 0.6),
         border: Border(
-          top: BorderSide(color: AppTheme.outlineVariant, width: 0.5),
+          top: BorderSide(color: AppTheme.outlineVariant, width: 1.2),
         ),
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.home, size: 22),
-            activeIcon: Icon(CupertinoIcons.home, size: 22),
+            icon: Icon(CupertinoIcons.house, size: 22),
+            activeIcon: Icon(CupertinoIcons.house_fill, size: 22),
             label: '首页',
           ),
           BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.eye_fill, size: 22),
+            icon: Icon(CupertinoIcons.eye, size: 22),
             activeIcon: Icon(CupertinoIcons.eye_fill, size: 22),
-            label: 'Vibe Check',
+            label: '望诊',
           ),
           BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.cloud_fill, size: 22),
+            icon: Icon(CupertinoIcons.cloud, size: 22),
             activeIcon: Icon(CupertinoIcons.cloud_fill, size: 22),
             label: '环境',
           ),
           BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.circle_grid_hex_fill, size: 22),
+            icon: Icon(CupertinoIcons.circle_grid_hex, size: 22),
             activeIcon: Icon(CupertinoIcons.circle_grid_hex_fill, size: 22),
             label: '经络',
           ),
           BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.doc_text_fill, size: 22),
+            icon: Icon(CupertinoIcons.pencil, size: 22),
+            activeIcon: Icon(CupertinoIcons.pencil, size: 22),
+            label: '画板',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(CupertinoIcons.doc_text, size: 22),
             activeIcon: Icon(CupertinoIcons.doc_text_fill, size: 22),
             label: '蓝图',
           ),
@@ -77,21 +83,47 @@ class RootTabView extends StatelessWidget {
       tabBuilder: (context, index) {
         switch (index) {
           case 0:
-            return CupertinoTabView(builder: (context) => const DashboardView());
+            return CupertinoTabView(
+              routes: {
+                '/': (context) => const DashboardView(),
+              },
+            );
           case 1:
-            return CupertinoTabView(builder: (context) => const VibeCheckView());
+            return CupertinoTabView(
+              routes: {
+                '/': (context) => const VibeCheckView(),
+              },
+            );
           case 2:
-            return CupertinoTabView(builder: (context) => const EnvironmentView());
+            return CupertinoTabView(
+              routes: {
+                '/': (context) => const EnvironmentView(),
+              },
+            );
           case 3:
-            return CupertinoTabView(builder: (context) => const MeridiansView());
+            return CupertinoTabView(
+              routes: {
+                '/': (context) => const MeridiansView(),
+              },
+            );
           case 4:
             return CupertinoTabView(
-              builder: (context) => SyncBlueprintView(
-                blueprint: _demoBlueprint,
-              ),
+              routes: {
+                '/': (context) => const SketchpadView(),
+              },
+            );
+          case 5:
+            return CupertinoTabView(
+              routes: {
+                '/': (context) => SyncBlueprintView(blueprint: _demoBlueprint),
+              },
             );
           default:
-            return CupertinoTabView(builder: (context) => const DashboardView());
+            return CupertinoTabView(
+              routes: {
+                '/': (context) => const DashboardView(),
+              },
+            );
         }
       },
     );

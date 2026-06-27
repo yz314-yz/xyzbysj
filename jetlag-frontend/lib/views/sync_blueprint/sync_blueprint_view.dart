@@ -1,7 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:jetlag_sync/theme/app_theme.dart';
+import 'package:jetlag_sync/widgets/sketch/sketch_widgets.dart';
 
 class SyncBlueprintView extends StatefulWidget {
   final String blueprint;
@@ -60,20 +62,20 @@ class _SyncBlueprintViewState extends State<SyncBlueprintView> {
         leading: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () => Navigator.of(context).pop(),
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(CupertinoIcons.back, size: 18, color: AppTheme.primaryText),
-              SizedBox(width: 4),
-              Text('返回', style: TextStyle(fontSize: 15, color: AppTheme.primaryText, fontWeight: FontWeight.w600)),
+              const Icon(CupertinoIcons.back, size: 18, color: AppTheme.ink),
+              const SizedBox(width: 4),
+              Text('返回', style: SketchFonts.body(size: 15, color: AppTheme.ink, weight: FontWeight.w600)),
             ],
           ),
         ),
-        middle: const Column(
+        middle: Column(
           children: [
-            Text('修复蓝图', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppTheme.primaryText)),
-            SizedBox(height: 2),
-            Text('SYNC BLUEPRINT', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: AppTheme.sage, letterSpacing: 0.15)),
+            Text('修复蓝图', style: SketchFonts.title(size: 22, color: AppTheme.ink)),
+            const SizedBox(height: 2),
+            Text('SYNC BLUEPRINT', style: SketchFonts.tag(size: 9, color: AppTheme.excalGreen, letterSpacing: 0.3)),
           ],
         ),
       ),
@@ -82,25 +84,57 @@ class _SyncBlueprintViewState extends State<SyncBlueprintView> {
           children: [
             SingleChildScrollView(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 14, 24, 36),
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 36),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _statusBanner(),
                     const SizedBox(height: 20),
-                    Container(
-                      decoration: BoxDecoration(color: AppTheme.cardSurface, borderRadius: BorderRadius.circular(20)),
+                    SketchCard(
+                      seed: 500,
+                      borderColor: AppTheme.ink,
+                      fillColor: AppTheme.cardSurface,
                       padding: const EdgeInsets.all(20),
+                      cornerRadius: 16,
+                      strokeWidth: 1.5,
                       child: MarkdownBody(
                         data: widget.blueprint,
                         styleSheet: MarkdownStyleSheet(
-                          p: const TextStyle(fontSize: 13, color: AppTheme.primaryText, height: 1.65),
-                          h1: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: AppTheme.primaryText, height: 1.3),
-                          h2: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppTheme.primaryText, height: 1.2),
-                          listBullet: const TextStyle(fontSize: 13, color: AppTheme.sage, fontWeight: FontWeight.w700),
-                          code: const TextStyle(fontSize: 12, color: AppTheme.secondaryText),
-                          strong: const TextStyle(fontWeight: FontWeight.w700, color: AppTheme.primaryText),
-                          horizontalRuleDecoration: BoxDecoration(border: Border(top: BorderSide(width: 1, color: AppTheme.outlineVariant))),
+                          p: GoogleFonts.patrickHand(
+                            fontSize: 14,
+                            color: AppTheme.ink,
+                            height: 1.7,
+                          ),
+                          h1: GoogleFonts.caveat(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.ink,
+                            height: 1.3,
+                          ),
+                          h2: GoogleFonts.caveat(
+                            fontSize: 19,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.excalViolet,
+                            height: 1.3,
+                          ),
+                          listBullet: GoogleFonts.patrickHand(
+                            fontSize: 14,
+                            color: AppTheme.excalGreen,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          code: GoogleFonts.kalam(
+                            fontSize: 12,
+                            color: AppTheme.secondaryText,
+                          ),
+                          strong: GoogleFonts.patrickHand(
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.excalRed,
+                          ),
+                          horizontalRuleDecoration: BoxDecoration(
+                            border: Border(
+                              top: BorderSide(width: 1.5, color: AppTheme.outlineVariant),
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -117,14 +151,22 @@ class _SyncBlueprintViewState extends State<SyncBlueprintView> {
                 right: 0,
                 bottom: 100,
                 child: Center(
-                  child: Container(
+                  child: SketchCard(
+                    seed: 555,
+                    borderColor: AppTheme.ink,
+                    fillColor: AppTheme.ink,
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryText.withValues(alpha: 0.92),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [BoxShadow(color: AppTheme.primaryText.withValues(alpha: 0.2), blurRadius: 12, offset: const Offset(0, 4))],
+                    cornerRadius: 20,
+                    strokeWidth: 1.5,
+                    withShadow: true,
+                    child: Text(
+                      _toastMessage,
+                      style: SketchFonts.body(
+                        size: 13,
+                        color: const Color(0xFFFFFEF7),
+                        weight: FontWeight.w700,
+                      ),
                     ),
-                    child: Text(_toastMessage, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: CupertinoColors.white)),
                   ),
                 ),
               ),
@@ -135,25 +177,21 @@ class _SyncBlueprintViewState extends State<SyncBlueprintView> {
   }
 
   Widget _statusBanner() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.sage.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.sage.withValues(alpha: 0.2), width: 1),
-      ),
+    return SketchCard(
+      seed: 511,
+      borderColor: AppTheme.excalGreen,
+      fillColor: AppTheme.excalGreen.withValues(alpha: 0.08),
+      strokeWidth: 1.5,
+      cornerRadius: 14,
+      padding: const EdgeInsets.all(14),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(color: AppTheme.sage.withValues(alpha: 0.15), shape: BoxShape.circle),
-            child: const Icon(CupertinoIcons.check_mark, size: 14, color: AppTheme.sage),
-          ),
+          SketchBadge(emoji: '✓', color: AppTheme.excalGreen, size: 32, seed: 512),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
               '诊断完成 · 请按此方案进行节律修复',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.primaryText),
+              style: SketchFonts.body(size: 13, color: AppTheme.ink, weight: FontWeight.w700),
             ),
           ),
         ],
@@ -167,19 +205,19 @@ class _SyncBlueprintViewState extends State<SyncBlueprintView> {
         Expanded(
           child: GestureDetector(
             onTap: _onShare,
-            child: Container(
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppTheme.cardSurface,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: AppTheme.outlineVariant, width: 1),
-              ),
-              child: const Row(
+            child: SketchCard(
+              seed: 521,
+              borderColor: AppTheme.ink,
+              fillColor: AppTheme.cardSurface,
+              strokeWidth: 1.6,
+              cornerRadius: 22,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(CupertinoIcons.share, size: 16, color: AppTheme.primaryText),
-                  SizedBox(width: 6),
-                  Text('分享', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.primaryText)),
+                  const Icon(CupertinoIcons.share, size: 16, color: AppTheme.ink),
+                  const SizedBox(width: 6),
+                  Text('分享', style: SketchFonts.body(size: 14, color: AppTheme.ink, weight: FontWeight.w700)),
                 ],
               ),
             ),
@@ -189,19 +227,19 @@ class _SyncBlueprintViewState extends State<SyncBlueprintView> {
         Expanded(
           child: GestureDetector(
             onTap: _onSave,
-            child: Container(
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppTheme.primaryText,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [BoxShadow(color: AppTheme.primaryText.withValues(alpha: 0.2), blurRadius: 12, offset: const Offset(0, 4))],
-              ),
-              child: const Row(
+            child: SketchCard(
+              seed: 522,
+              borderColor: AppTheme.ink,
+              fillColor: AppTheme.ink,
+              strokeWidth: 1.6,
+              cornerRadius: 22,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(CupertinoIcons.bookmark_fill, size: 16, color: CupertinoColors.white),
-                  SizedBox(width: 6),
-                  Text('保存为今日方案', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: CupertinoColors.white)),
+                  const Icon(CupertinoIcons.bookmark_fill, size: 16, color: Color(0xFFFFFEF7)),
+                  const SizedBox(width: 6),
+                  Text('保存为今日方案', style: SketchFonts.body(size: 14, color: const Color(0xFFFFFEF7), weight: FontWeight.w700)),
                 ],
               ),
             ),

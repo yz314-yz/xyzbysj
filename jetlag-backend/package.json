@@ -1,7 +1,7 @@
 {
-  "name": "jetlag-sync-backend",
+  "name": "tcm-wellness-backend",
   "version": "1.0.0",
-  "description": "JetLag Sync - 时差修复局后端服务 (Node.js + Express + DeepSeek)",
+  "description": "中医养生辅助系统后端：规则引擎 + Qwen3-VL 图像特征接入",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",

@@ -1,5 +1,7 @@
+import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
 import 'package:jetlag_sync/theme/app_theme.dart';
+import 'package:jetlag_sync/widgets/sketch/sketch_widgets.dart';
 
 class EnvironmentView extends StatelessWidget {
   const EnvironmentView({super.key});
@@ -11,17 +13,11 @@ class EnvironmentView extends StatelessWidget {
       navigationBar: CupertinoNavigationBar(
         backgroundColor: AppTheme.surface,
         border: null,
-        middle: const Column(
+        middle: Column(
           children: [
-            Text(
-              '环境健康',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppTheme.primaryText),
-            ),
-            SizedBox(height: 2),
-            Text(
-              'ENVIRONMENT RADAR',
-              style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: AppTheme.sage, letterSpacing: 0.15),
-            ),
+            Text('环境健康', style: SketchFonts.title(size: 22, color: AppTheme.ink)),
+            const SizedBox(height: 2),
+            Text('ENVIRONMENT RADAR', style: SketchFonts.tag(size: 9, color: AppTheme.excalGreen, letterSpacing: 0.3)),
           ],
         ),
       ),
@@ -30,47 +26,47 @@ class EnvironmentView extends StatelessWidget {
           slivers: [
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                 child: _buildCircadianClock(),
               ),
             ),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
                 child: Row(
                   children: [
-                    Expanded(child: _metricCard('温度', '28°C', CupertinoIcons.thermometer, AppTheme.amber, '偏高')),
+                    Expanded(child: _metricCard('温度', '28°C', '🌡️', AppTheme.excalOrange, '偏高', 1)),
                     const SizedBox(width: 12),
-                    Expanded(child: _metricCard('湿度', '85%', CupertinoIcons.drop_fill, const Color(0xFF0284C7), '偏高')),
+                    Expanded(child: _metricCard('湿度', '85%', '💧', AppTheme.excalBlue, '偏高', 2)),
                   ],
                 ),
               ),
             ),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                 child: Row(
                   children: [
-                    Expanded(child: _metricCard('空气质量', '优', CupertinoIcons.wind, AppTheme.sage, 'AQI 42')),
+                    Expanded(child: _metricCard('空气质量', '优', '🍃', AppTheme.excalGreen, 'AQI 42', 3)),
                     const SizedBox(width: 12),
-                    Expanded(child: _metricCard('紫外线', '中', CupertinoIcons.sun_max_fill, const Color(0xFFF59E0B), '防护')),
+                    Expanded(child: _metricCard('紫外线', '中', '☀️', AppTheme.amber, '防护', 4)),
                   ],
                 ),
               ),
             ),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+                padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('今日节律建议', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppTheme.primaryText)),
+                    Text('今日节律建议', style: SketchFonts.title(size: 20, color: AppTheme.ink)),
                     const SizedBox(height: 12),
-                    _rhythmRow('06:00', '起床', '接触自然光，重置生物钟', AppTheme.sage),
-                    _rhythmRow('11:00', '午时', '心经当令，宜小憩', const Color(0xFFDC2626)),
-                    _rhythmRow('13:00', '未时', '小肠经当令，避免暴食', const Color(0xFFD97706)),
-                    _rhythmRow('21:00', '亥时', '三焦经当令，宜睡前放松', const Color(0xFF7C3AED)),
-                    _rhythmRow('22:00', '入睡', '胆经当令前进入深眠', AppTheme.primaryText),
+                    _rhythmRow('06:00', '起床', '接触自然光，重置生物钟', '🌅', AppTheme.excalGreen, 11),
+                    _rhythmRow('11:00', '午时', '心经当令，宜小憩', '🌞', AppTheme.excalRed, 12),
+                    _rhythmRow('13:00', '未时', '小肠经当令，避免暴食', '🍚', AppTheme.excalOrange, 13),
+                    _rhythmRow('21:00', '亥时', '三焦经当令，宜睡前放松', '🌙', AppTheme.excalViolet, 14),
+                    _rhythmRow('22:00', '入睡', '胆经当令前进入深眠', '😴', AppTheme.ink, 15),
                   ],
                 ),
               ),
@@ -82,63 +78,50 @@ class EnvironmentView extends StatelessWidget {
     );
   }
 
+  /// 手绘风生物节律钟盘
   Widget _buildCircadianClock() {
-    return Container(
+    return SketchCard(
+      seed: 200,
+      borderColor: AppTheme.ink,
+      fillColor: AppTheme.cardSurface,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.cardSurface,
-        borderRadius: BorderRadius.circular(20),
-      ),
+      cornerRadius: 16,
+      strokeWidth: 1.5,
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '生物节律',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    'CIRCADIAN RHYTHM',
-                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: AppTheme.sage, letterSpacing: 0.1),
-                  ),
+                  Text('生物节律', style: SketchFonts.title(size: 18, color: AppTheme.ink)),
+                  const SizedBox(height: 2),
+                  Text('CIRCADIAN RHYTHM', style: SketchFonts.tag(size: 9, color: AppTheme.excalGreen, letterSpacing: 0.3)),
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppTheme.amber.withValues(alpha: 0.12),
+                  color: AppTheme.excalOrange.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text(
-                  '滞后 3h',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.amber),
-                ),
+                child: Text('滞后 3h', style: SketchFonts.body(size: 12, color: AppTheme.excalOrange, weight: FontWeight.w700)),
               ),
             ],
           ),
           const SizedBox(height: 20),
           SizedBox(
-            height: 140,
+            height: 160,
             child: CustomPaint(
-              painter: CircadianPainter(),
-              child: const Center(
+              painter: SketchCircadianPainter(),
+              child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      '23:47',
-                      style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: -0.02),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      '子时 · 胆经',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.sage),
-                    ),
+                    Text('23:47', style: SketchFonts.numeric(size: 30, color: AppTheme.ink)),
+                    const SizedBox(height: 2),
+                    Text('子时 · 胆经', style: SketchFonts.body(size: 12, color: AppTheme.excalGreen, weight: FontWeight.w700)),
                   ],
                 ),
               ),
@@ -148,9 +131,9 @@ class EnvironmentView extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _rhythmPill('清醒', 0.8, AppTheme.amber),
-              _rhythmPill('褪黑素', 0.6, AppTheme.deepSpace),
-              _rhythmPill('皮质醇', 0.3, const Color(0xFFDC2626)),
+              _rhythmPill('清醒', AppTheme.excalOrange, 301),
+              _rhythmPill('褪黑素', AppTheme.deepSpace, 302),
+              _rhythmPill('皮质醇', AppTheme.excalRed, 303),
             ],
           ),
         ],
@@ -158,125 +141,176 @@ class EnvironmentView extends StatelessWidget {
     );
   }
 
-  Widget _rhythmPill(String label, double value, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(10),
-      ),
+  Widget _rhythmPill(String label, Color color, int seed) {
+    return SketchCard(
+      seed: seed,
+      borderColor: color,
+      fillColor: color.withValues(alpha: 0.08),
+      strokeWidth: 1.4,
+      cornerRadius: 12,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      withShadow: false,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          SketchBadge(emoji: '●', color: color, size: 14, seed: seed + 10),
           const SizedBox(width: 6),
-          Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+          Text(label, style: SketchFonts.body(size: 12, color: AppTheme.ink, weight: FontWeight.w600)),
         ],
       ),
     );
   }
 
-  Widget _metricCard(String label, String value, IconData icon, Color color, String subtitle) {
-    return Container(
+  Widget _metricCard(String label, String value, String emoji, Color color, String subtitle, int seed) {
+    return SketchCard(
+      seed: seed,
+      borderColor: color,
+      fillColor: AppTheme.cardSurface,
+      strokeWidth: 1.5,
+      cornerRadius: 14,
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.cardSurface,
-        borderRadius: BorderRadius.circular(16),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
-            child: Icon(icon, size: 16, color: color),
-          ),
-          const SizedBox(height: 10),
-          Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.secondaryText)),
+          SketchBadge(emoji: emoji, color: color, size: 38, seed: seed + 20),
+          const SizedBox(height: 12),
+          Text(label, style: SketchFonts.body(size: 12, color: AppTheme.secondaryText, weight: FontWeight.w600)),
           const SizedBox(height: 4),
-          Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: color)),
+          Text(value, style: SketchFonts.numeric(size: 24, color: color)),
           const SizedBox(height: 4),
-          Text(subtitle, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: AppTheme.secondaryText)),
+          Text(subtitle, style: SketchFonts.body(size: 11, color: AppTheme.secondaryText)),
         ],
       ),
     );
   }
 
-  Widget _rhythmRow(String time, String title, String desc, Color color) {
+  Widget _rhythmRow(String time, String title, String desc, String emoji, Color color, int seed) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(6),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: SketchCard(
+        seed: seed,
+        borderColor: color,
+        fillColor: AppTheme.cardSurface,
+        strokeWidth: 1.3,
+        cornerRadius: 12,
+        padding: const EdgeInsets.all(12),
+        withShadow: false,
+        child: Row(
+          children: [
+            SketchBadge(emoji: emoji, color: color, size: 36, seed: seed + 5),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(time, style: SketchFonts.tag(size: 10, color: color, letterSpacing: 0.3)),
+                  const SizedBox(height: 2),
+                  Text(title, style: SketchFonts.title(size: 16, color: AppTheme.ink)),
+                  const SizedBox(height: 2),
+                  Text(desc, style: SketchFonts.body(size: 11, color: AppTheme.secondaryText)),
+                ],
+              ),
             ),
-            child: Text(time, textAlign: TextAlign.center, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 2),
-                Text(desc, style: const TextStyle(fontSize: 11, color: AppTheme.secondaryText)),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
-class CircadianPainter extends CustomPainter {
+/// 手绘风生物节律钟盘 Painter
+class SketchCircadianPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 10;
+    final radius = size.width / 2 - 12;
+    final rng = math.Random(42);
 
-    final bgPaint = Paint()
-      ..color = AppTheme.outlineVariant
+    // 外圈：手绘抖动圆
+    final outerPaint = Paint()
+      ..color = AppTheme.ink.withValues(alpha: 0.6)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-    canvas.drawCircle(center, radius, bgPaint);
-
-    final arcPaint = Paint()
-      ..color = AppTheme.sage.withValues(alpha: 0.3)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 6
+      ..strokeWidth = 1.4
       ..strokeCap = StrokeCap.round;
+    final outerPath = Path();
+    final segs = 60;
+    for (int i = 0; i <= segs; i++) {
+      final a = (i / segs) * math.pi * 2;
+      final r = radius + (rng.nextDouble() - 0.5) * 1.2;
+      final x = center.dx + r * math.cos(a);
+      final y = center.dy + r * math.sin(a);
+      if (i == 0) {
+        outerPath.moveTo(x, y);
+      } else {
+        outerPath.lineTo(x, y);
+      }
+    }
+    canvas.drawPath(outerPath, outerPaint);
 
+    // 觉醒弧（橙色，约 60% 圆周）
     final awakePaint = Paint()
-      ..color = AppTheme.amber
+      ..color = AppTheme.excalOrange
       ..style = PaintingStyle.stroke
       ..strokeWidth = 6
       ..strokeCap = StrokeCap.round;
+    final awakePath = Path();
+    final awakeStart = -math.pi / 2;
+    final awakeSweep = math.pi * 2 * 0.6;
+    final awakeSegs = 40;
+    for (int i = 0; i <= awakeSegs; i++) {
+      final t = i / awakeSegs;
+      final a = awakeStart + t * awakeSweep;
+      final r = radius - 4 + (rng.nextDouble() - 0.5) * 0.8;
+      final x = center.dx + r * math.cos(a);
+      final y = center.dy + r * math.sin(a);
+      if (i == 0) {
+        awakePath.moveTo(x, y);
+      } else {
+        awakePath.lineTo(x, y);
+      }
+    }
+    canvas.drawPath(awakePath, awakePaint);
 
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -3.14 / 2,
-      3.14 * 0.6,
-      false,
-      arcPaint,
-    );
+    // 睡眠弧（深色）
+    final sleepPaint = Paint()
+      ..color = AppTheme.deepSpace.withValues(alpha: 0.7)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 6
+      ..strokeCap = StrokeCap.round;
+    final sleepPath = Path();
+    final sleepStart = awakeStart + awakeSweep;
+    final sleepSweep = math.pi * 2 * 0.4;
+    for (int i = 0; i <= awakeSegs; i++) {
+      final t = i / awakeSegs;
+      final a = sleepStart + t * sleepSweep;
+      final r = radius - 4 + (rng.nextDouble() - 0.5) * 0.8;
+      final x = center.dx + r * math.cos(a);
+      final y = center.dy + r * math.sin(a);
+      if (i == 0) {
+        sleepPath.moveTo(x, y);
+      } else {
+        sleepPath.lineTo(x, y);
+      }
+    }
+    canvas.drawPath(sleepPath, sleepPaint);
 
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -3.14 / 2 + 3.14 * 0.6,
-      3.14 * 0.4,
-      false,
-      awakePaint,
-    );
-
-    for (int i = 0; i < 24; i++) {
-      final angle = (i / 24) * 6.28 - 3.14 / 2;
-      final x = center.dx + radius * 0.85 * (i % 6 == 0 ? 1.1 : 1.05) * 0;
-      final x1 = center.dx + radius * 0.92 * (angle % 1 == 0 ? 1 : 1);
+    // 12 个时辰刻度（手绘短线）
+    final tickPaint = Paint()
+      ..color = AppTheme.ink
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round;
+    for (int i = 0; i < 12; i++) {
+      final a = (i / 12) * math.pi * 2 - math.pi / 2;
+      final r1 = radius + 4;
+      final r2 = radius + (i % 3 == 0 ? 12 : 8);
+      final ox = (rng.nextDouble() - 0.5) * 0.6;
+      final oy = (rng.nextDouble() - 0.5) * 0.6;
+      canvas.drawLine(
+        Offset(center.dx + r1 * math.cos(a) + ox, center.dy + r1 * math.sin(a) + oy),
+        Offset(center.dx + r2 * math.cos(a) + ox, center.dy + r2 * math.sin(a) + oy),
+        tickPaint,
+      );
     }
   }
 
