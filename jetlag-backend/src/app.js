@@ -30,9 +30,18 @@ function getCspConnectSources() {
   return Array.from(sources);
 }
 
-function isAllowedCorsOrigin(origin) {
+function isAllowedCorsOrigin(origin, requestHost) {
   if (!origin) return true;
   if (config.allowedOrigins.includes(origin)) return true;
+  // 同源请求放行：Origin 的 host 与当前请求 Host 相同（单容器部署场景，如 Hugging Face Space）
+  if (requestHost) {
+    try {
+      const originUrl = new URL(origin);
+      if (originUrl.host === requestHost) return true;
+    } catch {
+      // ignore
+    }
+  }
   if (config.allowedOrigins.length === 0 && process.env.NODE_ENV !== 'production') {
     if (config.trustedDevOrigins.has(origin)) return true;
     try {
@@ -66,15 +75,26 @@ function createApp() {
     crossOriginResourcePolicy: { policy: 'same-origin' },
   }));
 
-  app.use(cors({
-    origin(origin, callback) {
-      if (isAllowedCorsOrigin(origin)) {
-        callback(null, true);
-        return;
+  // 自定义 CORS：同源请求（Origin host === 请求 Host）直接放行，适配单容器部署
+  app.use((req, res, next) => {
+    const origin = req.get('origin');
+    const requestHost = req.get('host') || '';
+    if (isAllowedCorsOrigin(origin, requestHost)) {
+      if (origin) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Vary', 'Origin');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
       }
-      callback(createHttpError(403, '当前页面来源未被允许访问接口。'));
-    },
-  }));
+      if (req.method === 'OPTIONS') {
+        res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+        return res.status(204).end();
+      }
+      next();
+      return;
+    }
+    next(createHttpError(403, '当前页面来源未被允许访问接口。'));
+  });
   app.use(morgan('combined', { stream: httpLogStream }));
   app.use(metricsMiddleware);
   app.use(express.json({ limit: '20mb' }));
