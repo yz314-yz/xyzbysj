@@ -10,6 +10,9 @@ RUN npm run build
 FROM node:20-alpine AS backend-runtime
 WORKDIR /app
 
+# better-sqlite3 是原生模块，Alpine 需要编译工具链
+RUN apk add --no-cache python3 make g++
+
 COPY jetlag-backend/package*.json ./
 RUN npm ci --omit=dev
 
