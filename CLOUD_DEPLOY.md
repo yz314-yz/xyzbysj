@@ -22,7 +22,7 @@ cp .env.cloud.example .env
 PUBLIC_API_BASE=http://你的服务器公网IP:3000
 CORS_ORIGIN=http://你的服务器公网IP:8080
 OPEN_MODEL_BASE_URL=http://你的GPU服务器IP:8000/v1
-OPEN_MODEL_API_KEY=EMPTY
+OPEN_MODEL_API_KEY=
 OPEN_MODEL_NAME=Qwen/Qwen3-VL-8B-Instruct
 ```
 

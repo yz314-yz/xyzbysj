@@ -7,13 +7,28 @@ services:
     container_name: tcm-wellness-backend
     restart: unless-stopped
     environment:
+      NODE_ENV: production
       PORT: 3000
+      DATA_DIR: /app/data
+      DATABASE_PATH: ${DATABASE_PATH:-/app/data/tcm-wellness.sqlite}
+      LOG_DIR: ${LOG_DIR:-/app/logs}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      ENABLE_MERIDIAN_CRON: ${ENABLE_MERIDIAN_CRON:-false}
+      DIAGNOSE_RATE_WINDOW_MS: ${DIAGNOSE_RATE_WINDOW_MS:-60000}
+      DIAGNOSE_RATE_MAX: ${DIAGNOSE_RATE_MAX:-10}
       OPEN_MODEL_BASE_URL: ${OPEN_MODEL_BASE_URL:-}
-      OPEN_MODEL_API_KEY: ${OPEN_MODEL_API_KEY:-EMPTY}
+      OPEN_MODEL_API_KEY: ${OPEN_MODEL_API_KEY:-}
       OPEN_MODEL_NAME: ${OPEN_MODEL_NAME:-Qwen/Qwen3-VL-8B-Instruct}
+      OPEN_MODEL_TIMEOUT_MS: ${OPEN_MODEL_TIMEOUT_MS:-30000}
       CORS_ORIGIN: ${CORS_ORIGIN:-}
     ports:
       - "${BACKEND_PORT:-3000}:3000"
+    volumes:
+      - backend-data:/app/data
+      - backend-logs:/app/logs
+      - backend-uploads:/app/uploads
 
   frontend:
     build:
@@ -23,6 +38,71 @@ services:
     environment:
       VITE_API_BASE: ${PUBLIC_API_BASE:-http://localhost:3000}
     ports:
-      - "${FRONTEND_PORT:-8080}:80"
+      - "${FRONTEND_PORT:-8080}:8080"
     depends_on:
       - backend
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    profiles:
+      - observability
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    volumes:
+      - ./deploy/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    depends_on:
+      - backend
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    profiles:
+      - observability
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-change-me}
+    volumes:
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+    depends_on:
+      - prometheus
+      - loki
+
+  loki:
+    image: grafana/loki:3.3.2
+    profiles:
+      - observability
+    restart: unless-stopped
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./deploy/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
+    ports:
+      - "${LOKI_PORT:-3100}:3100"
+
+  promtail:
+    image: grafana/promtail:3.3.2
+    profiles:
+      - observability
+    restart: unless-stopped
+    command: -config.file=/etc/promtail/config.yml
+    volumes:
+      - ./deploy/promtail-config.yml:/etc/promtail/config.yml:ro
+      - backend-logs:/var/log/tcm:ro
+    depends_on:
+      - backend
+      - loki
+
+volumes:
+  backend-data:
+  backend-logs:
+  backend-uploads:
+  prometheus-data:
+  grafana-data:
+  loki-data:

@@ -90,7 +90,7 @@ FROM ghcr.io/<github-user>/<repo>:latest
 PORT=7860
 PUBLIC_API_BASE=
 OPEN_MODEL_BASE_URL=https://你的-qwen3-vl-服务/v1
-OPEN_MODEL_API_KEY=EMPTY
+OPEN_MODEL_API_KEY=
 OPEN_MODEL_NAME=Qwen/Qwen3-VL-8B-Instruct
 CORS_ORIGIN=
 ```

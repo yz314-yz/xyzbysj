@@ -1,11 +1,15 @@
 const fs = require('fs');
 const { OpenAI } = require('openai');
+const { logger } = require('./logger');
 
 const DEFAULT_QWEN_MODEL = 'Qwen/Qwen3-VL-8B-Instruct';
+const DEFAULT_TIMEOUT_MS = 30 * 1000;
+const COMPATIBLE_PROVIDER_PLACEHOLDER_KEY = 'local-compatible-provider-without-key';
 
 function getVisionProviderStatus() {
   const baseURL = (process.env.OPEN_MODEL_BASE_URL || '').trim();
   const model = process.env.OPEN_MODEL_NAME || DEFAULT_QWEN_MODEL;
+  const timeoutMs = Number(process.env.OPEN_MODEL_TIMEOUT_MS || DEFAULT_TIMEOUT_MS);
   const enabled = Boolean(baseURL);
 
   return {
@@ -13,21 +17,76 @@ function getVisionProviderStatus() {
     provider: 'Qwen3-VL',
     model,
     baseURL: baseURL || '未配置',
+    timeoutMs,
+    apiKeyConfigured: Boolean(process.env.OPEN_MODEL_API_KEY),
   };
+}
+
+function isUnsafeMissingKey(status) {
+  return status.enabled
+    && !status.apiKeyConfigured
+    && String(status.baseURL || '').toLowerCase().includes('api.openai.com');
 }
 
 function createClient() {
   const status = getVisionProviderStatus();
   if (!status.enabled) return null;
+  if (isUnsafeMissingKey(status)) {
+    logger.warn('OPEN_MODEL_BASE_URL 指向真实 OpenAI 端点但未配置 OPEN_MODEL_API_KEY，本次停用图像模型调用。');
+    return null;
+  }
 
   return new OpenAI({
     baseURL: process.env.OPEN_MODEL_BASE_URL,
-    apiKey: process.env.OPEN_MODEL_API_KEY || 'EMPTY',
+    apiKey: process.env.OPEN_MODEL_API_KEY || COMPATIBLE_PROVIDER_PLACEHOLDER_KEY,
+    timeout: status.timeoutMs,
   });
 }
 
-function imagePartFromFile(file, label) {
-  const base64 = fs.readFileSync(file.path, 'base64');
+function warnIfUnsafeVisionConfig() {
+  const status = getVisionProviderStatus();
+  if (isUnsafeMissingKey(status)) {
+    logger.warn('OPEN_MODEL_BASE_URL 指向真实 OpenAI 端点，但 OPEN_MODEL_API_KEY 未配置。');
+  }
+}
+
+async function checkVisionProviderHealth() {
+  const status = getVisionProviderStatus();
+  if (!status.enabled) {
+    return { configured: false, reachable: false, reason: '未配置 OPEN_MODEL_BASE_URL' };
+  }
+  if (isUnsafeMissingKey(status)) {
+    return { configured: true, reachable: false, reason: '真实 OpenAI 端点必须配置 OPEN_MODEL_API_KEY' };
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), Math.min(status.timeoutMs, 5000));
+
+  try {
+    const response = await fetch(status.baseURL.replace(/\/$/, '') + '/models', {
+      signal: controller.signal,
+      headers: {
+        Authorization: 'Bearer ' + (process.env.OPEN_MODEL_API_KEY || COMPATIBLE_PROVIDER_PLACEHOLDER_KEY),
+      },
+    });
+    return {
+      configured: true,
+      reachable: response.ok,
+      statusCode: response.status,
+    };
+  } catch (error) {
+    return {
+      configured: true,
+      reachable: false,
+      reason: error.name === 'AbortError' ? '上游探测超时' : error.message,
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function imagePartFromFile(file, label) {
+  const base64 = await fs.promises.readFile(file.path, 'base64');
   return [
     { type: 'text', text: '下面这张图片类型：' + label + '。' },
     {
@@ -42,14 +101,46 @@ function extractJsonObject(text) {
   try {
     return JSON.parse(text);
   } catch {
-    const match = String(text).match(/\{[\s\S]*\}/);
-    if (!match) return null;
-    try {
-      return JSON.parse(match[0]);
-    } catch {
-      return null;
+    const source = String(text);
+    for (let start = 0; start < source.length; start += 1) {
+      if (source[start] !== '{') continue;
+
+      let depth = 0;
+      let inString = false;
+      let escaped = false;
+
+      for (let end = start; end < source.length; end += 1) {
+        const char = source[end];
+
+        if (inString) {
+          if (escaped) {
+            escaped = false;
+          } else if (char === '\\') {
+            escaped = true;
+          } else if (char === '"') {
+            inString = false;
+          }
+          continue;
+        }
+
+        if (char === '"') {
+          inString = true;
+        } else if (char === '{') {
+          depth += 1;
+        } else if (char === '}') {
+          depth -= 1;
+          if (depth === 0) {
+            try {
+              return JSON.parse(source.slice(start, end + 1));
+            } catch {
+              break;
+            }
+          }
+        }
+      }
     }
   }
+  return null;
 }
 
 function compactFeatureText(parsed, raw) {
@@ -71,10 +162,11 @@ async function analyzeWithQwenVision(files, initialAnalysis) {
   const status = getVisionProviderStatus();
   if (!client) return { status, result: null };
 
-  const imageParts = [];
-  if (files.tongue?.[0]) imageParts.push(...imagePartFromFile(files.tongue[0], '舌像'));
-  if (files.face?.[0]) imageParts.push(...imagePartFromFile(files.face[0], '面相'));
-  if (files.palm?.[0]) imageParts.push(...imagePartFromFile(files.palm[0], '手相'));
+  const imagePartTasks = [];
+  if (files.tongue?.[0]) imagePartTasks.push(imagePartFromFile(files.tongue[0], '舌像'));
+  if (files.face?.[0]) imagePartTasks.push(imagePartFromFile(files.face[0], '面相'));
+  if (files.palm?.[0]) imagePartTasks.push(imagePartFromFile(files.palm[0], '手相'));
+  const imageParts = (await Promise.all(imagePartTasks)).flat();
   if (!imageParts.length) return { status, result: null };
 
   const prompt = [
@@ -92,20 +184,35 @@ async function analyzeWithQwenVision(files, initialAnalysis) {
     '规则引擎初步方向：' + (initialAnalysis?.constitution?.primary || '待综合判断'),
   ].join('\n');
 
-  const response = await client.chat.completions.create({
-    model: status.model,
-    temperature: 0.1,
-    max_tokens: 900,
-    messages: [
-      {
-        role: 'user',
-        content: [{ type: 'text', text: prompt }, ...imageParts],
-      },
-    ],
-  });
+  const response = await client.chat.completions.create(
+    {
+      model: status.model,
+      temperature: 0.1,
+      max_tokens: 900,
+      messages: [
+        {
+          role: 'user',
+          content: [{ type: 'text', text: prompt }, ...imageParts],
+        },
+      ],
+    },
+    { timeout: status.timeoutMs }
+  );
 
-  const raw = response.choices?.[0]?.message?.content || '';
+  if (response.error) {
+    throw new Error('模型服务返回错误。');
+  }
+
+  const raw = response.choices?.[0]?.message?.content;
+  if (typeof raw !== 'string' || !raw.trim()) {
+    throw new Error('模型响应缺少可解析内容。');
+  }
+
   const parsed = extractJsonObject(raw);
+  if (!parsed) {
+    throw new Error('模型响应不是有效 JSON。');
+  }
+
   return {
     status,
     result: {
@@ -119,5 +226,7 @@ async function analyzeWithQwenVision(files, initialAnalysis) {
 module.exports = {
   DEFAULT_QWEN_MODEL,
   analyzeWithQwenVision,
+  checkVisionProviderHealth,
   getVisionProviderStatus,
+  warnIfUnsafeVisionConfig,
 };
