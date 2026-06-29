@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
 import { Sidebar } from './components/Sidebar';
@@ -8,6 +8,7 @@ import { useRuntimeData } from './hooks/useRuntimeData';
 import { useSectionObserver } from './hooks/useSectionObserver';
 import { AboutPage } from './pages/AboutPage';
 import { AssessmentPage } from './pages/AssessmentPage';
+import { CoverPage } from './pages/CoverPage';
 import { HelpPage } from './pages/HelpPage';
 import { HistoryPage } from './pages/HistoryPage';
 
@@ -49,7 +50,7 @@ export function App() {
       />
       <section className="workspace">
         <Routes>
-          <Route path="/" element={<Navigate to="/collection" replace />} />
+          <Route path="/" element={<CoverPage theme={theme} />} />
           <Route path="/collection" element={<AssessmentPage auth={auth} {...runtimeData} />} />
           <Route path="/history" element={<HistoryPage auth={auth} />} />
           <Route path="/help" element={<HelpPage />} />

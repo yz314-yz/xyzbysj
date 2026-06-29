@@ -16,6 +16,9 @@
     "node": ">=20"
   },
   "dependencies": {
+    "@tsparticles/engine": "^4.3.0",
+    "@tsparticles/react": "^4.3.0",
+    "@tsparticles/slim": "^4.3.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "lucide-react": "^0.468.0",

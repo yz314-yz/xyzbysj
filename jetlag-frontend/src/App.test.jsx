@@ -1,15 +1,15 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { BrowserRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, test, vi, beforeEach } from 'vitest';
 
 import { App } from './App';
 
-function renderApp() {
+function renderApp(initialEntry = '/collection') {
   return render(
-    <BrowserRouter>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <App />
-    </BrowserRouter>
+    </MemoryRouter>
   );
 }
 
@@ -35,7 +35,7 @@ beforeEach(() => {
 
 describe('App', () => {
   test('keeps submit disabled until a symptom is selected', async () => {
-    renderApp();
+    renderApp('/collection');
     const submit = await screen.findByRole('button', { name: '生成七日调理计划' });
     expect(submit).toBeDisabled();
 
@@ -44,8 +44,16 @@ describe('App', () => {
   });
 
   test('renders route navigation pages', async () => {
-    renderApp();
+    renderApp('/collection');
     await userEvent.click(screen.getByRole('link', { name: /用户手册/ }));
     expect(await screen.findByText('1. 采集信息')).toBeInTheDocument();
+  });
+
+  test('renders cover page with disclaimer on root route', async () => {
+    renderApp('/');
+    const heading = await screen.findByRole('heading', { level: 1 });
+    expect(heading).toHaveTextContent('岐养七日');
+    expect(screen.getByText(/AI 分析仅供学术参考/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /进入系统/ })).toBeInTheDocument();
   });
 });

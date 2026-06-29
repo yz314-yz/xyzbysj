@@ -21,6 +21,7 @@ const sectionItems = [
 export function Sidebar({ activeSection, auth, onSectionClick, onThemeToggle, theme }) {
   return (
     <aside className="sidebar">
+      <div className="sidebar-glow" aria-hidden="true" />
       <div className="brand">
         <span>岐</span>
         <div>
