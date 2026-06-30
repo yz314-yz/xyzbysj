@@ -1,6 +1,7 @@
 import { History, LockKeyhole } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { Link } from 'react-router-dom';
 
 import { loadHistory } from '../services/api';
 
@@ -32,6 +33,7 @@ export function HistoryPage({ auth }) {
         <LockKeyhole size={28} />
         <h1>登录后查看历史记录</h1>
         <p>诊断结果会在登录状态下自动保存，便于答辩演示用户体系和数据持久化。</p>
+        <Link className="ghost page-action" to="/login">去登录</Link>
       </section>
     );
   }

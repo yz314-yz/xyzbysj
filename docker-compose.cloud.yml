@@ -36,7 +36,7 @@ services:
     container_name: tcm-wellness-frontend
     restart: unless-stopped
     environment:
-      VITE_API_BASE: ${PUBLIC_API_BASE:-http://localhost:3000}
+      VITE_API_BASE: ${PUBLIC_API_BASE:-}
     ports:
       - "${FRONTEND_PORT:-8080}:8080"
     depends_on:

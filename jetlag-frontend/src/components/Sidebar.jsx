@@ -1,7 +1,6 @@
-import { BookOpen, CalendarDays, ClipboardList, HeartPulse, HelpCircle, History, Home, Leaf } from 'lucide-react';
+import { BookOpen, CalendarDays, ClipboardList, HeartPulse, HelpCircle, History, Home, Leaf, UserRound } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
-import { AuthPanel } from './AuthPanel';
 import { ThemeToggle } from './ThemeToggle';
 
 const navItems = [
@@ -19,6 +18,8 @@ const sectionItems = [
 ];
 
 export function Sidebar({ activeSection, auth, onSectionClick, onThemeToggle, theme }) {
+  const accountLabel = auth.user ? auth.user.username : '登录 / 注册';
+
   return (
     <aside className="sidebar">
       <div className="sidebar-glow" aria-hidden="true" />
@@ -36,6 +37,9 @@ export function Sidebar({ activeSection, auth, onSectionClick, onThemeToggle, th
             <Icon size={18} /> {label}
           </NavLink>
         ))}
+        <NavLink to="/login" className={({ isActive }) => (isActive ? 'active' : '')}>
+          <UserRound size={18} /> {accountLabel}
+        </NavLink>
         {sectionItems.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -51,7 +55,6 @@ export function Sidebar({ activeSection, auth, onSectionClick, onThemeToggle, th
       <div className="sidebar-actions">
         <ThemeToggle theme={theme} onToggle={onThemeToggle} />
       </div>
-      <AuthPanel auth={auth} />
       <p className="notice">毕业设计演示版本：以图像特征记录、症状归类和养生计划生成为核心，不提供医疗诊断。</p>
     </aside>
   );

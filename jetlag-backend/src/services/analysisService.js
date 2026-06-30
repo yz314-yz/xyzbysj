@@ -143,15 +143,171 @@ function scorePatterns(selectedIds, observation, visionText) {
     .map(([id, score]) => ({ id, score, ...patternMeta[id] }));
 }
 
-function buildSevenDayPlan(primary) {
-  return sevenDayThemes.map(([theme, diet, exercise, sleep], index) => ({
-    day: '第 ' + (index + 1) + ' 天',
-    theme,
-    diet: index === 0 && primary?.foods?.[0] ? primary.foods[0] + ' + ' + diet : diet,
-    exercise: index === 0 && primary?.exercise?.[0] ? primary.exercise[0] + '；' + exercise : exercise,
-    sleep,
-    note: index < 3 ? '先稳住脾胃与睡眠节律' : '再逐步增加恢复性活动',
-  }));
+function timeToMinutes(value) {
+  if (!/^\d{2}:\d{2}$/.test(String(value || ''))) return null;
+  const [hour, minute] = value.split(':').map(Number);
+  return hour * 60 + minute;
+}
+
+function buildPlanContext({ selectedSymptoms, selectedLabels, profile, observation, qwenVision }) {
+  const symptomSet = new Set(selectedSymptoms);
+  const visionText = qwenVision?.featureText || '';
+  const bedtimeMinutes = timeToMinutes(profile.bedtime);
+  const wakeMinutes = timeToMinutes(profile.wakeTime);
+  const lateSleep = bedtimeMinutes !== null && (bedtimeMinutes >= 23 * 60 || bedtimeMinutes < 3 * 60);
+  const earlyWake = wakeMinutes !== null && wakeMinutes <= 6 * 60 + 30;
+  const age = Number(profile.age || 0);
+
+  return {
+    symptomSet,
+    selectedLabels,
+    visionText,
+    lateSleep,
+    earlyWake,
+    ageGroup: age >= 45 ? 'midlife' : age > 0 && age <= 25 ? 'young' : 'adult',
+    hasVision: Boolean(qwenVision?.parsed),
+    observationKeys: Object.entries(observation)
+      .filter(([, enabled]) => enabled)
+      .map(([key]) => key),
+  };
+}
+
+function pickByIndex(list, index) {
+  if (!list.length) return '';
+  return list[index % list.length];
+}
+
+function buildAdaptiveFocus(primary, secondary, context) {
+  const focus = [
+    {
+      theme: primary?.care || '稳定作息与饮食节律',
+      diet: pickByIndex(primary?.foods || [], 0),
+      exercise: pickByIndex(primary?.exercise || [], 0),
+      basis: '主方向：' + (primary?.name || '基础调理'),
+    },
+  ];
+
+  secondary.forEach((item, index) => {
+    focus.push({
+      theme: item.care,
+      diet: pickByIndex(item.foods || [], index),
+      exercise: pickByIndex(item.exercise || [], index),
+      basis: '兼顾：' + item.name,
+    });
+  });
+
+  if (context.symptomSet.has('insomnia') || context.symptomSet.has('palpitation') || context.lateSleep) {
+    focus.push({
+      theme: '安神稳眠，降低夜间刺激',
+      diet: '桂圆莲子粥或酸枣仁小米粥',
+      exercise: '睡前肩颈拉伸 12 分钟，神门穴按揉',
+      basis: context.lateSleep ? '作息提示：入睡时间偏晚' : '症状提示：睡眠或心神不稳',
+    });
+  }
+
+  if (context.symptomSet.has('bloating') || context.symptomSet.has('poor_appetite')) {
+    focus.push({
+      theme: '健脾助运，减轻腹胀与食欲低',
+      diet: '山药小米粥 + 陈皮水，晚餐七分饱',
+      exercise: '饭后慢走 20 分钟，顺时针摩腹 5 分钟',
+      basis: '症状提示：食欲或腹胀相关',
+    });
+  }
+
+  if (context.symptomSet.has('dry_mouth') || context.symptomSet.has('eye_dry') || /少津|干燥|舌红|裂纹/.test(context.visionText)) {
+    focus.push({
+      theme: '养阴生津，减少燥热消耗',
+      diet: '银耳百合羹或梨汤少糖',
+      exercise: '腹式呼吸 8 分钟，避免大汗运动',
+      basis: /少津|干燥|舌红|裂纹/.test(context.visionText) ? '视觉提示：舌面津液或颜色偏燥热' : '症状提示：口眼干燥',
+    });
+  }
+
+  if (context.symptomSet.has('acne') || context.symptomSet.has('bitter') || /黄腻|厚腻|油光|痘|潮红/.test(context.visionText)) {
+    focus.push({
+      theme: '清利湿热，控制油腻辛辣',
+      diet: '冬瓜薏米汤 + 绿豆百合水',
+      exercise: '快走微汗 20 分钟，避免熬夜后剧烈运动',
+      basis: /黄腻|厚腻|油光|痘|潮红/.test(context.visionText) ? '视觉提示：油光、潮红或苔腻倾向' : '症状提示：口苦、痘痘或潮热',
+    });
+  }
+
+  if (context.symptomSet.has('fatigue') || context.symptomSet.has('cold_limbs') || /淡白|苍白|少华|掌色淡/.test(context.visionText)) {
+    focus.push({
+      theme: '益气养血，避免空腹与过劳',
+      diet: '黄芪红枣粥或山药胡萝卜鸡汤',
+      exercise: '八段锦调理脾胃，饭后散步 15 分钟',
+      basis: /淡白|苍白|少华|掌色淡/.test(context.visionText) ? '视觉提示：面色或掌色偏淡' : '症状提示：疲倦、虚汗或手脚偏凉',
+    });
+  }
+
+  if (context.symptomSet.has('anxiety') || /烦躁|紧张|情绪|眼神疲惫/.test(context.visionText)) {
+    focus.push({
+      theme: '疏肝理气，给情绪留出口',
+      diet: '玫瑰陈皮茶 + 清淡主食',
+      exercise: '扩胸运动 3 组，户外慢走 20 分钟',
+      basis: /烦躁|紧张|情绪|眼神疲惫/.test(context.visionText) ? '视觉/文本提示：神情疲惫或情绪紧张' : '症状提示：焦虑烦躁',
+    });
+  }
+
+  if (context.symptomSet.has('back_sore') || context.symptomSet.has('memory') || /黑眼圈|腰膝|暗沉|络脉/.test(context.visionText)) {
+    focus.push({
+      theme: '温肾固本，降低夜间透支',
+      diet: '黑豆核桃粥或枸杞山药蒸蛋',
+      exercise: '擦腰温肾 3 分钟，静蹲 2 组',
+      basis: /黑眼圈|腰膝|暗沉|络脉/.test(context.visionText) ? '视觉提示：暗沉、黑眼圈或络脉线索' : '症状提示：腰膝或注意力恢复相关',
+    });
+  }
+
+  if (context.hasVision && context.observationKeys.length) {
+    focus.push({
+      theme: '复核图像线索，观察变化',
+      diet: '延续前一日主食，记录口干、食欲和精神变化',
+      exercise: '轻柔拉伸 15 分钟，不追求强度',
+      basis: '已采集图像：' + context.observationKeys.join('、') + '；计划已纳入 Qwen2.5-VL 特征',
+    });
+  }
+
+  return focus;
+}
+
+function buildSleepAdvice(index, profile, context) {
+  if (context.lateSleep) {
+    const target = index < 3 ? '比当前提前 15 分钟上床' : '尽量在 23:00 前进入睡前流程';
+    return target + '，睡前 30 分钟离屏。';
+  }
+  if (profile.bedtime) {
+    return '维持 ' + profile.bedtime + ' 左右睡前流程，晚间只做低刺激活动。';
+  }
+  if (context.earlyWake) {
+    return '早起后先温水与轻伸展，午间闭目 15-20 分钟。';
+  }
+  return index < 3 ? '固定起卧节律，午后少咖啡因。' : '记录睡眠、食欲、精神三项变化。';
+}
+
+function buildSevenDayPlan(primary, secondary, options = {}) {
+  const context = buildPlanContext(options);
+  const focus = buildAdaptiveFocus(primary, secondary, context);
+
+  return sevenDayThemes.map((fallback, index) => {
+    const current = focus[index % focus.length] || {};
+    const next = focus[(index + 1) % focus.length] || {};
+    const theme = current.theme || fallback[0];
+    const dietBase = current.diet || pickByIndex(primary?.foods || [], index) || fallback[1];
+    const exerciseBase = current.exercise || pickByIndex(primary?.exercise || [], index) || fallback[2];
+    const symptomsText = context.selectedLabels.length
+      ? '本日重点来自：' + context.selectedLabels.slice(0, 3).join('、')
+      : '本日重点来自：上传图像与基础采集项';
+
+    return {
+      day: '第 ' + (index + 1) + ' 天',
+      theme,
+      diet: dietBase + (index % 2 === 0 ? '；晚餐减油减甜。' : '；三餐定时，不空腹饮浓茶咖啡。'),
+      exercise: exerciseBase + (context.ageGroup === 'midlife' ? '，强度以微汗不过喘为度。' : '，完成后保留 5 分钟放松。'),
+      sleep: buildSleepAdvice(index, options.profile || {}, context),
+      note: current.basis + '；' + symptomsText + (next.theme ? '；明日衔接：' + next.theme : ''),
+    };
+  });
 }
 
 function buildObservationCopy(observation, qwenVision) {
@@ -237,7 +393,13 @@ function buildAnalysis({ selectedSymptoms, observation, hour, profile, qwenVisio
       '今日运动选择：' + primary.exercise[0] + '，以微汗或身心放松为度。',
       '睡前 30 分钟停止高刺激内容，泡脚 10 分钟后做腹式呼吸。',
     ],
-    sevenDayPlan: buildSevenDayPlan(primary),
+    sevenDayPlan: buildSevenDayPlan(primary, secondary, {
+      selectedSymptoms,
+      selectedLabels,
+      profile,
+      observation,
+      qwenVision,
+    }),
     qwenVision: qwenVision?.parsed ? {
       provider: 'Qwen2.5-VL',
       model: provider.model,

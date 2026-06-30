@@ -11,6 +11,7 @@ import { AssessmentPage } from './pages/AssessmentPage';
 import { CoverPage } from './pages/CoverPage';
 import { HelpPage } from './pages/HelpPage';
 import { HistoryPage } from './pages/HistoryPage';
+import { LoginPage } from './pages/LoginPage';
 
 const observedSections = ['collection', 'constitution', 'plan', 'meridian'];
 
@@ -39,6 +40,17 @@ export function App() {
     setActiveSection(id);
   }
 
+  if (location.pathname === '/login') {
+    return (
+      <main className="auth-shell">
+        <Routes>
+          <Route path="/login" element={<LoginPage auth={auth} />} />
+        </Routes>
+        <Toaster position="top-right" toastOptions={{ duration: 2600 }} />
+      </main>
+    );
+  }
+
   return (
     <main className="shell">
       <Sidebar
@@ -53,6 +65,7 @@ export function App() {
           <Route path="/" element={<CoverPage theme={theme} />} />
           <Route path="/collection" element={<AssessmentPage auth={auth} {...runtimeData} />} />
           <Route path="/history" element={<HistoryPage auth={auth} />} />
+          <Route path="/login" element={<LoginPage auth={auth} />} />
           <Route path="/help" element={<HelpPage />} />
           <Route path="/about" element={<AboutPage />} />
         </Routes>

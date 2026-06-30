@@ -8,17 +8,25 @@ function toTextArray(value) {
 export function VisionPanel({ result }) {
   const parsed = result.qwenVision?.parsed;
   const visionStatus = result.engineStatus?.vision;
+  const modelConfigured = Boolean(visionStatus?.configured);
+  const neutralFallback = modelConfigured
+    ? 'Qwen2.5-VL 已配置；上传舌像、面相或手相后会参与图像特征分析。'
+    : '当前使用本地规则引擎记录采集状态。';
   const statusText = parsed
     ? result.qwenVision.model
-    : visionStatus?.configured
+    : modelConfigured
       ? '模型已配置'
-      : '本地规则已接管';
+      : '等待图像采集';
   const statusDetail =
     result.modelVisionError ||
     (parsed
       ? 'Qwen2.5-VL 已返回图像特征，本地规则引擎已参与方案生成。'
-      : visionStatus?.fallbackReason || '当前使用本地规则引擎生成养生方案。');
-  const fallbackReference = visionStatus?.fallbackReason || '当前使用本地规则引擎记录采集状态。';
+      : modelConfigured
+        ? neutralFallback
+        : visionStatus?.fallbackReason || '当前使用本地规则引擎生成养生方案。');
+  const fallbackReference = modelConfigured
+    ? neutralFallback
+    : visionStatus?.fallbackReason || '当前使用本地规则引擎记录采集状态。';
   const items = parsed
     ? [
         ['舌像', toTextArray(parsed.tongue?.features), parsed.tongue?.tcm_reference],

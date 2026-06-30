@@ -21,6 +21,7 @@ export function PlanTable({ result }) {
           <span>
             <Moon size={15} /> 作息计划
           </span>
+          <span>调整依据</span>
         </div>
         {result.sevenDayPlan.map((row) => (
           <div className="tr" key={row.day}>
@@ -29,6 +30,7 @@ export function PlanTable({ result }) {
             <span>{row.diet}</span>
             <span>{row.exercise}</span>
             <span>{row.sleep}</span>
+            <small>{row.note}</small>
           </div>
         ))}
         {!result.sevenDayPlan.length && (
