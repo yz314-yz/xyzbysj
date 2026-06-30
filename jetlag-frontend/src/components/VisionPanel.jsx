@@ -16,7 +16,7 @@ export function VisionPanel({ result }) {
   const statusDetail =
     result.modelVisionError ||
     (parsed
-      ? 'Qwen3-VL 已返回图像特征，本地规则引擎已参与方案生成。'
+      ? 'Qwen2.5-VL 已返回图像特征，本地规则引擎已参与方案生成。'
       : visionStatus?.fallbackReason || '当前使用本地规则引擎生成养生方案。');
   const fallbackReference = visionStatus?.fallbackReason || '当前使用本地规则引擎记录采集状态。';
   const items = parsed
@@ -35,7 +35,7 @@ export function VisionPanel({ result }) {
     <section className="panel vision-panel">
       <div className="section-title">
         <ScanEye size={20} />
-        <h2>Qwen3-VL 图像特征</h2>
+        <h2>Qwen2.5-VL 图像特征</h2>
         <span className={`status-pill ${parsed ? 'is-model' : 'is-rules'}`}>{statusText}</span>
       </div>
       <div className={`engine-banner ${parsed ? 'is-model' : 'is-rules'}`}>

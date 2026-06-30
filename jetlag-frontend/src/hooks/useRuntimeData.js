@@ -27,8 +27,8 @@ export function useRuntimeData() {
       }
 
       if (healthResponse.status === 'fulfilled') {
-        setModelName(healthResponse.value.qwen3VLModel || DEFAULT_MODEL_NAME);
-        setVisionConfigured(Boolean(healthResponse.value.qwen3VLReady));
+        setModelName(healthResponse.value.visionModelName || DEFAULT_MODEL_NAME);
+        setVisionConfigured(Boolean(healthResponse.value.visionModelReady));
       }
     }
 
@@ -40,3 +40,4 @@ export function useRuntimeData() {
 
   return { modelName, symptomOptions, visionConfigured };
 }
+

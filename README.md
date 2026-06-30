@@ -1,6 +1,6 @@
-# 岐养七日 · 中医养生辅助系统
+﻿# 岐养七日 · 中医养生辅助系统
 
-岐养七日是一个面向毕业设计展示的中医养生辅助系统。系统通过症状选择、舌像/面相/手相图片采集、本地规则引擎和可选 Qwen3-VL 图像特征提取，生成体质方向、子午流注建议和七日饮食/运动/作息计划。
+岐养七日是一个面向毕业设计展示的中医养生辅助系统。系统通过症状选择、舌像/面相/手相图片采集、本地规则引擎和可选 Qwen2.5-VL 图像特征提取，生成体质方向、子午流注建议和七日饮食/运动/作息计划。
 
 > 免责声明：系统输出仅供学术展示与日常养生参考，不能替代执业医师诊断、治疗或处方。
 
@@ -8,7 +8,7 @@
 
 - 用户注册/登录：JWT 鉴权，登录后自动保存诊断历史。
 - 望诊采集：支持舌像、面相、手相上传、拖拽、预览和单张删除。
-- 智能分析：本地规则引擎 + 可选 Qwen3-VL 图像特征。
+- 智能分析：本地规则引擎 + 可选 Qwen2.5-VL 图像特征。
 - 历史记录：SQLite 持久化用户和诊断记录。
 - 计划导出：前端可将报告导出为 PDF。
 - API 文档：后端提供 Swagger UI `/api-docs`。
@@ -20,7 +20,7 @@
 |---|---|
 | 前端 | React、Vite、React Router、react-hot-toast、html2canvas、jsPDF |
 | 后端 | Node.js、Express、SQLite、JWT、Zod、Multer、Helmet、Morgan、Winston |
-| AI 接入 | OpenAI 兼容接口、Qwen3-VL |
+| AI 接入 | OpenAI 兼容接口、Qwen2.5-VL |
 | 测试 | Jest + Supertest、Vitest + Testing Library |
 | 部署 | Docker、Nginx、GitHub Actions、GHCR |
 
@@ -100,6 +100,24 @@ cd ../jetlag-frontend && npm run build
 - `OPEN_MODEL_API_KEY`
 - `OPEN_MODEL_NAME`
 
+## 接入 Qwen2.5-VL
+
+项目默认使用 `Qwen/Qwen2.5-VL-3B-Instruct`，通过 vLLM 提供 OpenAI 兼容接口。没有启动模型服务时，系统会自动使用本地规则引擎；启动模型服务后，上传舌像、面相或手相图片即可获得图像特征记录。
+
+GPU 环境可用 Docker 启动：
+
+```bash
+docker compose --env-file .env -f deploy/qwen25-vl-vllm.compose.yml up -d
+```
+
+本地后端 `.env` 中配置：
+
+```env
+OPEN_MODEL_BASE_URL=http://localhost:8000/v1
+OPEN_MODEL_API_KEY=
+OPEN_MODEL_NAME=Qwen/Qwen2.5-VL-3B-Instruct
+```
+
 ## 部署
 
 项目提供：
@@ -109,3 +127,5 @@ cd ../jetlag-frontend && npm run build
 - `docker-compose.cloud.yml --profile observability`：可选 Prometheus、Grafana、Loki、Promtail 监控与日志采集。
 - `.github/workflows/ghcr-fullstack.yml`：构建并推送 GHCR 镜像。
 - `deploy/huggingface-space/Dockerfile`：Hugging Face Space 复用 GHCR 镜像。
+
+

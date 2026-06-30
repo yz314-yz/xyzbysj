@@ -76,7 +76,7 @@ function renderMetrics() {
     '# HELP tcm_app_started_at_seconds Application start timestamp.',
     '# TYPE tcm_app_started_at_seconds gauge',
     renderMetricLine('tcm_app_started_at_seconds', {}, Math.floor(startedAt / 1000)),
-    '# HELP tcm_vision_provider_configured Whether Qwen3-VL provider is configured.',
+    '# HELP tcm_vision_provider_configured Whether the vision model provider is configured.',
     '# TYPE tcm_vision_provider_configured gauge',
     renderMetricLine(
       'tcm_vision_provider_configured',

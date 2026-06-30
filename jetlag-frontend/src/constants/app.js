@@ -1,4 +1,4 @@
-export const DEFAULT_MODEL_NAME = 'Qwen/Qwen3-VL-8B-Instruct';
+﻿export const DEFAULT_MODEL_NAME = 'Qwen/Qwen2.5-VL-3B-Instruct';
 export const REQUEST_TIMEOUT_MS = 45 * 1000;
 export const CONFIG_TIMEOUT_MS = 8 * 1000;
 export const ACCEPTED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
@@ -35,12 +35,12 @@ export function createEmptyResult(modelName = DEFAULT_MODEL_NAME) {
         role: '根据症状、采集项和子午流注生成体质方向与七日养生计划。',
       },
       vision: {
-        provider: 'Qwen3-VL',
+        provider: 'Qwen2.5-VL',
         model: modelName,
         configured: false,
         active: false,
         baseURL: '未配置',
-        fallbackReason: 'Qwen3-VL 模型未配置，已使用本地规则引擎生成养生方案。',
+        fallbackReason: 'Qwen2.5-VL 模型未配置，已使用本地规则引擎生成养生方案。',
       },
     },
     disclaimer: 'AI 分析仅供学术展示与日常养生参考，不能替代执业医师诊断、治疗或处方。',
@@ -63,3 +63,4 @@ export function createEmptyResult(modelName = DEFAULT_MODEL_NAME) {
     sevenDayPlan: [],
   };
 }
+

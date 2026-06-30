@@ -14,7 +14,7 @@ export function HelpPage() {
         </article>
         <article>
           <strong>2. 生成方案</strong>
-          <p>点击生成按钮后，系统会结合本地规则和可选 Qwen3-VL 图像特征生成七日计划。</p>
+          <p>点击生成按钮后，系统会结合本地规则和可选 Qwen2.5-VL 图像特征生成七日计划。</p>
         </article>
         <article>
           <strong>3. 保存与导出</strong>
@@ -24,3 +24,4 @@ export function HelpPage() {
     </section>
   );
 }
+

@@ -1,7 +1,7 @@
 {
   "name": "tcm-wellness-backend",
   "version": "1.0.0",
-  "description": "中医养生辅助系统后端：规则引擎 + Qwen3-VL 图像特征接入",
+  "description": "中医养生辅助系统后端：规则引擎 + Qwen2.5-VL 图像特征接入",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
@@ -43,3 +43,4 @@
     "testEnvironment": "node"
   }
 }
+

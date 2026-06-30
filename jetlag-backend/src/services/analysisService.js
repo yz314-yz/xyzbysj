@@ -162,13 +162,13 @@ function buildObservationCopy(observation, qwenVision) {
 
   return {
     tongue: observation.tongue
-      ? (tongueFeatures.length ? 'Qwen3-VL 舌像特征：' + tongueFeatures.join('，') : '已采集舌像：按舌色、舌苔、津液、舌下络脉归档。')
+      ? (tongueFeatures.length ? 'Qwen2.5-VL 舌像特征：' + tongueFeatures.join('，') : '已采集舌像：按舌色、舌苔、津液、舌下络脉归档。')
       : '未采集舌像：建议在自然光下伸舌平拍，避免美颜和强滤镜。',
     face: observation.face
-      ? (faceFeatures.length ? 'Qwen3-VL 面相特征：' + faceFeatures.join('，') : '已采集面相：按面色、眼神、黑眼圈、油光潮红归档。')
+      ? (faceFeatures.length ? 'Qwen2.5-VL 面相特征：' + faceFeatures.join('，') : '已采集面相：按面色、眼神、黑眼圈、油光潮红归档。')
       : '未采集面相：建议正脸、自然光、无遮挡拍摄。',
     palm: observation.palm
-      ? (palmFeatures.length ? 'Qwen3-VL 手相特征：' + palmFeatures.join('，') : '已采集手相：按掌色、掌纹清晰度、温润度归档。')
+      ? (palmFeatures.length ? 'Qwen2.5-VL 手相特征：' + palmFeatures.join('，') : '已采集手相：按掌色、掌纹清晰度、温润度归档。')
       : '未采集手相：建议掌心展开、光线均匀拍摄。',
   };
 }
@@ -182,9 +182,9 @@ function buildEngineStatus(provider, observation, qwenVision) {
     if (!hasImage) {
       fallbackReason = '未上传图像，本次仅使用本地规则引擎生成养生方案。';
     } else if (!provider.enabled) {
-      fallbackReason = 'Qwen3-VL 模型未配置，已使用本地规则引擎生成养生方案。';
+      fallbackReason = 'Qwen2.5-VL 模型未配置，已使用本地规则引擎生成养生方案。';
     } else {
-      fallbackReason = '未获得可解析的 Qwen3-VL 图像特征，已使用本地规则引擎生成养生方案。';
+      fallbackReason = '未获得可解析的 Qwen2.5-VL 图像特征，已使用本地规则引擎生成养生方案。';
     }
   }
 
@@ -217,7 +217,7 @@ function buildAnalysis({ selectedSymptoms, observation, hour, profile, qwenVisio
   const provider = getVisionProviderStatus();
 
   return {
-    mode: qwenVision?.parsed ? 'qwen3-vl-plus-rules' : 'local-rules',
+    mode: qwenVision?.parsed ? 'qwen25-vl-plus-rules' : 'local-rules',
     engineStatus: buildEngineStatus(provider, observation, qwenVision),
     disclaimer: 'AI 分析仅供学术展示与日常养生参考，不能替代执业医师诊断、治疗或处方。',
     profile,
@@ -239,7 +239,7 @@ function buildAnalysis({ selectedSymptoms, observation, hour, profile, qwenVisio
     ],
     sevenDayPlan: buildSevenDayPlan(primary),
     qwenVision: qwenVision?.parsed ? {
-      provider: 'Qwen3-VL',
+      provider: 'Qwen2.5-VL',
       model: provider.model,
       parsed: qwenVision.parsed,
     } : null,
@@ -280,8 +280,8 @@ async function runDiagnosis({ body, files, user }) {
     const qwenResponse = await analyzeWithQwenVision(files || {}, initialAnalysis);
     qwenVision = qwenResponse.result;
   } catch (error) {
-    logger.warn('Qwen3-VL 调用失败：' + error.message);
-    modelVisionError = 'Qwen3-VL 暂不可用，已使用本地规则完成演示。';
+    logger.warn('Qwen2.5-VL 调用失败：' + error.message);
+    modelVisionError = 'Qwen2.5-VL 暂不可用，已使用本地规则完成演示。';
   }
 
   const analysis = buildAnalysis({ selectedSymptoms, observation, hour, profile, qwenVision });

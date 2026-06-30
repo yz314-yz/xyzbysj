@@ -1,4 +1,4 @@
-name: tcm-wellness
+﻿name: tcm-wellness
 
 services:
   backend:
@@ -20,7 +20,7 @@ services:
       DIAGNOSE_RATE_MAX: ${DIAGNOSE_RATE_MAX:-10}
       OPEN_MODEL_BASE_URL: ${OPEN_MODEL_BASE_URL:-}
       OPEN_MODEL_API_KEY: ${OPEN_MODEL_API_KEY:-}
-      OPEN_MODEL_NAME: ${OPEN_MODEL_NAME:-Qwen/Qwen3-VL-8B-Instruct}
+      OPEN_MODEL_NAME: ${OPEN_MODEL_NAME:-Qwen/Qwen2.5-VL-3B-Instruct}
       OPEN_MODEL_TIMEOUT_MS: ${OPEN_MODEL_TIMEOUT_MS:-30000}
       CORS_ORIGIN: ${CORS_ORIGIN:-}
     ports:
@@ -106,3 +106,5 @@ volumes:
   prometheus-data:
   grafana-data:
   loki-data:
+
+

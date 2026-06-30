@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+﻿import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, test, vi, beforeEach } from 'vitest';
@@ -25,8 +25,8 @@ beforeEach(() => {
     if (String(url).endsWith('/health')) {
       return Promise.resolve(new Response(JSON.stringify({
         status: 'ok',
-        qwen3VLReady: false,
-        qwen3VLModel: 'Qwen/Qwen3-VL-8B-Instruct',
+        visionModelReady: false,
+        visionModelName: 'Qwen/Qwen2.5-VL-3B-Instruct',
       })));
     }
     return Promise.resolve(new Response(JSON.stringify({ success: true, data: [] })));
@@ -57,3 +57,4 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /进入系统/ })).toBeInTheDocument();
   });
 });
+
