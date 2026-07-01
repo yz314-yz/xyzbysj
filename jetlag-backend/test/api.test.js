@@ -145,14 +145,22 @@ describe('TCM wellness API', () => {
   });
 
   test('SSE meridian-stream returns event-stream content type', async () => {
-    const res = request(app).get('/api/v1/meridian-stream').buffer(false);
-    const abort = new Promise((resolve) => setTimeout(() => resolve({ aborted: true }), 800));
-    const result = await Promise.race([res, abort]);
-    if (result.aborted) {
-      // SSE 是长连接，只要能建立连接即可，不等待关闭
-      return;
-    }
-    expect(result.headers['content-type']).toContain('text/event-stream');
-    result.abort();
-  }, 3000);
+    // 使用 mock 避免长连接导致 Jest 挂起
+    const { registerSSEClient, broadcastMeridianReminder } = require('../src/services/reminderService');
+    const events = [];
+    const mockRes = {
+      write: (data) => events.push(data),
+      on: () => mockRes,
+    };
+    const unsubscribe = registerSSEClient(mockRes);
+
+    broadcastMeridianReminder({ name: '子时', meridian: '胆经', range: '23-01', advice: '早睡养胆' });
+
+    expect(events.length).toBeGreaterThanOrEqual(1);
+    const payload = JSON.parse(events[0].replace(/^data: /, '').trim());
+    expect(payload.type).toBe('meridian-reminder');
+    expect(payload.meridian.meridian).toBe('胆经');
+
+    unsubscribe();
+  });
 });

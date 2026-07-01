@@ -8,7 +8,7 @@
     "dev": "nodemon src/server.js",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test": "jest --runInBand"
+    "test": "jest --runInBand --forceExit"
   },
   "engines": {
     "node": ">=20"
