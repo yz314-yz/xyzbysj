@@ -43,7 +43,7 @@ export function createEmptyResult(modelName = DEFAULT_MODEL_NAME) {
         fallbackReason: '等待上传图像后启用 Qwen2.5-VL；未采集图像时仅展示本地规则结果。',
       },
     },
-    disclaimer: 'AI 分析仅供学术展示与日常养生参考，不能替代执业医师诊断、治疗或处方。',
+    disclaimer: '⚠️ AI 分析仅供学术参考，不作为医疗诊断。请咨询执业中医师。',
     observation: {
       tongue: '舌像待采集：建议在自然光下平拍，避免美颜和强滤镜。',
       face: '面相待采集：建议正脸、自然光、无遮挡拍摄。',

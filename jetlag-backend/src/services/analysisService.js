@@ -375,7 +375,7 @@ function buildAnalysis({ selectedSymptoms, observation, hour, profile, qwenVisio
   return {
     mode: qwenVision?.parsed ? 'qwen25-vl-plus-rules' : 'local-rules',
     engineStatus: buildEngineStatus(provider, observation, qwenVision),
-    disclaimer: 'AI 分析仅供学术展示与日常养生参考，不能替代执业医师诊断、治疗或处方。',
+    disclaimer: '⚠️ AI 分析仅供学术参考，不作为医疗诊断。请咨询执业中医师。',
     profile,
     observation: buildObservationCopy(observation, qwenVision),
     selectedSymptoms: selectedLabels,

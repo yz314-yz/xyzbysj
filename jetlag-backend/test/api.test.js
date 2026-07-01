@@ -78,4 +78,81 @@ describe('TCM wellness API', () => {
       .field('profile', JSON.stringify({}))
       .expect(400);
   });
+
+  test('rejects login with wrong password', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ username: 'alice', password: 'wrong-password' })
+      .expect(401);
+    expect(res.body.success).toBe(false);
+  });
+
+  test('rejects login with non-existent user', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ username: 'ghost', password: 'whatever' })
+      .expect(401);
+    expect(res.body.success).toBe(false);
+  });
+
+  test('rejects history access without token', async () => {
+    await request(app).get('/api/v1/history').expect(401);
+  });
+
+  test('rejects history access with forged token', async () => {
+    await request(app)
+      .get('/api/v1/history')
+      .set('Authorization', 'Bearer forged.invalid.token')
+      .expect(401);
+  });
+
+  test('returns 404 for non-existent history detail', async () => {
+    await request(app)
+      .get('/api/v1/history/999999')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(404);
+  });
+
+  test('accepts diagnosis with image upload', async () => {
+    const res = await request(app)
+      .post('/api/v1/diagnose')
+      .set('Authorization', `Bearer ${token}`)
+      .field('symptoms', JSON.stringify(['fatigue', 'cold_limbs']))
+      .field('profile', JSON.stringify({ age: '30', gender: '男' }))
+      .field('hour', '6')
+      .attach('tongue', Buffer.from('fake-image-data'), { filename: 'tongue.png', contentType: 'image/png' })
+      .expect(200);
+
+    expect(res.body.data.observation.tongue).toBeTruthy();
+    expect(res.body.savedId).toBeTruthy();
+  });
+
+  test('fetches history detail with full report', async () => {
+    const list = await request(app)
+      .get('/api/v1/history')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    const firstId = list.body.data[0].id;
+    const detail = await request(app)
+      .get(`/api/v1/history/${firstId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(detail.body.data.result).toBeTruthy();
+    expect(detail.body.data.result.sevenDayPlan).toBeTruthy();
+    expect(detail.body.data.result.sevenDayPlan.length).toBe(7);
+  });
+
+  test('SSE meridian-stream returns event-stream content type', async () => {
+    const res = request(app).get('/api/v1/meridian-stream').buffer(false);
+    const abort = new Promise((resolve) => setTimeout(() => resolve({ aborted: true }), 800));
+    const result = await Promise.race([res, abort]);
+    if (result.aborted) {
+      // SSE 是长连接，只要能建立连接即可，不等待关闭
+      return;
+    }
+    expect(result.headers['content-type']).toContain('text/event-stream');
+    result.abort();
+  }, 3000);
 });

@@ -178,7 +178,7 @@ async function analyzeWithQwenVision(files, initialAnalysis) {
     '  "face": { "features": ["面色/眼神/黑眼圈/油光潮红等可见特征"], "tcm_reference": "养生参考" },',
     '  "palm": { "features": ["掌色/掌纹清晰度/温润度等可见特征"], "tcm_reference": "养生参考" },',
     '  "overall_observation": ["1-3 条综合观察"],',
-    '  "caution": "仅供学术展示与日常养生参考，不能替代执业医师诊断。"',
+    '  "caution": "⚠️ AI 分析仅供学术参考，不作为医疗诊断。请咨询执业中医师。"',
     '}',
     '如果某类图片没有提供，对应字段 features 为空数组，tcm_reference 写“未采集”。',
     '规则引擎初步方向：' + (initialAnalysis?.constitution?.primary || '待综合判断'),

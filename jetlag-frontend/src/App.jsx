@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 
 import { Sidebar } from './components/Sidebar';
 import { useAuth } from './hooks/useAuth';
+import { useMeridianStream } from './hooks/useMeridianStream';
 import { useRuntimeData } from './hooks/useRuntimeData';
 import { useSectionObserver } from './hooks/useSectionObserver';
 import { AboutPage } from './pages/AboutPage';
@@ -18,6 +19,7 @@ const observedSections = ['collection', 'constitution', 'plan', 'meridian'];
 export function App() {
   const auth = useAuth();
   const runtimeData = useRuntimeData();
+  useMeridianStream();
   const location = useLocation();
   const navigate = useNavigate();
   const { activeSection, setActiveSection } = useSectionObserver(observedSections, 'collection');

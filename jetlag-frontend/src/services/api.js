@@ -65,6 +65,10 @@ export function loadHistory(token) {
   return fetchJson('/api/v1/history', { token });
 }
 
+export function loadHistoryDetail(token, id) {
+  return fetchJson(`/api/v1/history/${id}`, { token });
+}
+
 export function submitDiagnosis(form, token) {
   return fetchJson('/api/v1/diagnose', {
     method: 'POST',

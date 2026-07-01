@@ -12,6 +12,7 @@ const { errorHandler, createHttpError, notFoundHandler } = require('./middleware
 const authRoutes = require('./routes/authRoutes');
 const diagnosisRoutes = require('./routes/diagnosisRoutes');
 const healthRoutes = require('./routes/healthRoutes');
+const meridianRoutes = require('./routes/meridianRoutes');
 const metricsRoutes = require('./routes/metricsRoutes');
 const symptomRoutes = require('./routes/symptomRoutes');
 const { swaggerSpec } = require('./swagger');
@@ -113,6 +114,7 @@ function createApp() {
   app.use('/api/v1/auth', authRoutes);
   app.use('/api/v1', symptomRoutes);
   app.use('/api/v1', diagnosisRoutes);
+  app.use('/api/v1', meridianRoutes);
 
   if (fs.existsSync(config.publicDir)) {
     app.use(express.static(config.publicDir));
