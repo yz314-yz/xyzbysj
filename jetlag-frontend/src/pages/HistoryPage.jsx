@@ -7,7 +7,7 @@ import { loadHistory, loadHistoryDetail } from '../services/api';
 
 export function HistoryPage({ auth }) {
   const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(Boolean(auth.token));
   const [expandedId, setExpandedId] = useState(null);
   const [detailCache, setDetailCache] = useState({});
   const [detailLoading, setDetailLoading] = useState(false);
@@ -18,7 +18,6 @@ export function HistoryPage({ auth }) {
       return undefined;
     }
 
-    setLoading(true);
     loadHistory(auth.token)
       .then((payload) => {
         if (!cancelled) setItems(payload.data || []);
