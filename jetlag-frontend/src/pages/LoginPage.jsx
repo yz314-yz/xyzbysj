@@ -20,7 +20,7 @@ export function LoginPage({ auth }) {
             <ShieldCheck size={16} /> 本地演示账号
           </span>
         </div>
-        <Link className="ghost login-back" to="/collection">
+        <Link className="ghost login-back" to="/book">
           返回望诊采集
         </Link>
       </div>

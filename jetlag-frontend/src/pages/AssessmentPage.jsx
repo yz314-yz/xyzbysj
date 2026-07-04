@@ -1,23 +1,45 @@
 import { useMemo, useState } from 'react';
-import { Camera, RotateCcw, Sprout, Upload } from 'lucide-react';
+import { ArrowUp, Camera, RotateCcw, Sprout, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-import { emptyFiles, emptyProfile, createEmptyResult } from '../constants/app';
+import {
+  INFERENCE_MODE_OFFLINE_QWEN, INFERENCE_MODE_PUBLIC,
+  emptyFiles, emptyProfile, createEmptyResult,
+} from '../constants/app';
+import { ChatPanel } from '../components/ChatPanel';
+import { CheckinPanel } from '../components/CheckinPanel';
 import { FileDrop } from '../components/FileDrop';
 import { ExportButton } from '../components/ExportButton';
+import { InferenceModeSelector } from '../components/InferenceModeSelector';
 import { MeridianActions } from '../components/MeridianActions';
 import { PlanTable } from '../components/PlanTable';
 import { ProfileForm } from '../components/ProfileForm';
 import { ResultCard } from '../components/ResultCard';
+import { ShareCard } from '../components/ShareCard';
 import { SymptomsPanel } from '../components/SymptomsPanel';
 import { VisionPanel } from '../components/VisionPanel';
 import { submitDiagnosis } from '../services/api';
 
-export function AssessmentPage({ auth, modelName, symptomOptions, visionConfigured }) {
+const IMAGE_LABELS = { tongue: '舌像', face: '面相', palm: '手相' };
+
+function getImageQualityError(features) {
+  const issues = Object.entries(features)
+    .filter(([, item]) => item?.safetyGate !== 'pass' || Number(item?.confidence || 0) < 0.55)
+    .map(([key, item]) => {
+      const details = Object.values(item?.observedFeatures || {}).filter(Boolean).join('、');
+      return `${IMAGE_LABELS[key] || key}${details ? `（${details}）` : ''}`;
+    });
+  if (!issues.length) return '';
+  return `图片质量不足：${issues.join('；')}。请在自然光、画面清晰、主体居中的条件下重新拍摄。`;
+}
+
+export function AssessmentPage({ auth, modelName, requireModelEvidence = false, symptomOptions, visionConfigured }) {
+  const [inferenceMode, setInferenceMode] = useState(INFERENCE_MODE_PUBLIC);
   const [selected, setSelected] = useState([]);
   const [files, setFiles] = useState(emptyFiles);
+  const [browserFeatures, setBrowserFeatures] = useState({});
   const [profile, setProfile] = useState(emptyProfile);
-  const [result, setResult] = useState(() => createEmptyResult(modelName));
+  const [result, setResult] = useState(() => createEmptyResult(modelName, INFERENCE_MODE_PUBLIC));
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState('');
   const [fileInputVersion, setFileInputVersion] = useState(0);
@@ -34,14 +56,29 @@ export function AssessmentPage({ auth, modelName, symptomOptions, visionConfigur
     setSelected((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
   }
 
-  function updateFile(key, file) {
+  function updateInferenceMode(nextMode) {
+    if (nextMode === INFERENCE_MODE_OFFLINE_QWEN && !visionConfigured) {
+      toast.error('离线增强模式需要先连接本机 Qwen2.5-VL 服务。');
+      return;
+    }
+    setInferenceMode(nextMode);
+    setResult(createEmptyResult(modelName, nextMode));
+  }
+
+  function updateFile(key, file, features) {
     setFormError('');
     setFiles((current) => ({ ...current, [key]: file }));
+    if (features) setBrowserFeatures((current) => ({ ...current, [key]: features }));
   }
 
   function removeFile(key) {
     setFormError('');
     setFiles((current) => ({ ...current, [key]: null }));
+    setBrowserFeatures((current) => {
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
   }
 
   function updateProfile(key, value) {
@@ -51,8 +88,9 @@ export function AssessmentPage({ auth, modelName, symptomOptions, visionConfigur
   function resetForm() {
     setSelected([]);
     setFiles(emptyFiles);
+    setBrowserFeatures({});
     setProfile(emptyProfile);
-    setResult(createEmptyResult(modelName));
+    setResult(createEmptyResult(modelName, inferenceMode));
     setFormError('');
     setFileInputVersion((current) => current + 1);
   }
@@ -62,20 +100,36 @@ export function AssessmentPage({ auth, modelName, symptomOptions, visionConfigur
       setFormError('请至少选择一个症状或上传一张图片。');
       return;
     }
+    const qualityError = getImageQualityError(browserFeatures);
+    if (qualityError) {
+      setFormError(qualityError);
+      toast.error(qualityError);
+      return;
+    }
+    if (requireModelEvidence && inferenceMode === INFERENCE_MODE_PUBLIC) {
+      const message = '上线严格模式要求公网体验版加载浏览器端多模态模型。当前仅有轻量图片特征，不能生成上线级方案。';
+      setFormError(message);
+      toast.error(message);
+      return;
+    }
 
     setLoading(true);
     setFormError('');
     const form = new FormData();
+    form.append('inferenceMode', inferenceMode);
     form.append('symptoms', JSON.stringify(selected));
     form.append('profile', JSON.stringify(profile));
     form.append('hour', new Date().getHours());
-    Object.entries(files).forEach(([key, value]) => {
-      if (value) form.append(key, value);
-    });
+    form.append('browserFeatures', JSON.stringify(browserFeatures));
+    if (inferenceMode === INFERENCE_MODE_OFFLINE_QWEN) {
+      Object.entries(files).forEach(([key, value]) => {
+        if (value) form.append(key, value);
+      });
+    }
 
     try {
       const payload = await submitDiagnosis(form, auth.token);
-      setResult(payload.data);
+      setResult({ ...payload.data, savedId: payload.savedId || null });
       toast.success(payload.savedId ? '方案已生成并保存到历史记录。' : '方案已生成。登录后可保存历史记录。');
     } catch (error) {
       const message = error.name === 'AbortError'
@@ -112,6 +166,13 @@ export function AssessmentPage({ auth, modelName, symptomOptions, visionConfigur
               <h2>图像采集</h2>
               <span>{fileCount}/3</span>
             </div>
+            <InferenceModeSelector
+              disabled={loading}
+              requireModelEvidence={requireModelEvidence}
+              offlineAvailable={visionConfigured}
+              onChange={updateInferenceMode}
+              value={inferenceMode}
+            />
             <div className="drops">
               <FileDrop
                 key={`tongue-${fileInputVersion}`}
@@ -120,7 +181,7 @@ export function AssessmentPage({ auth, modelName, symptomOptions, visionConfigur
                 hint="自然光、伸舌平拍"
                 icon={Upload}
                 file={files.tongue}
-                onChange={(file) => updateFile('tongue', file)}
+                onChange={(file, features) => updateFile('tongue', file, features)}
                 onRemove={() => removeFile('tongue')}
                 onError={setFormError}
               />
@@ -131,7 +192,7 @@ export function AssessmentPage({ auth, modelName, symptomOptions, visionConfigur
                 hint="正脸、无遮挡"
                 icon={Camera}
                 file={files.face}
-                onChange={(file) => updateFile('face', file)}
+                onChange={(file, features) => updateFile('face', file, features)}
                 onRemove={() => removeFile('face')}
                 onError={setFormError}
               />
@@ -142,7 +203,7 @@ export function AssessmentPage({ auth, modelName, symptomOptions, visionConfigur
                 hint="掌心展开、光线均匀"
                 icon={Sprout}
                 file={files.palm}
-                onChange={(file) => updateFile('palm', file)}
+                onChange={(file, features) => updateFile('palm', file, features)}
                 onRemove={() => removeFile('palm')}
                 onError={setFormError}
               />
@@ -173,6 +234,7 @@ export function AssessmentPage({ auth, modelName, symptomOptions, visionConfigur
                 ...result.engineStatus.vision,
                 configured: visionConfigured || result.engineStatus.vision.configured,
                 model: modelName || result.engineStatus.vision.model,
+                requested: inferenceMode === INFERENCE_MODE_OFFLINE_QWEN || result.engineStatus.vision.requested,
               },
             },
           }} />
@@ -181,10 +243,23 @@ export function AssessmentPage({ auth, modelName, symptomOptions, visionConfigur
         <PlanTable result={result} />
       </div>
 
+      <CheckinPanel diagnosisId={result.savedId} result={result} token={auth.token} />
+      <ChatPanel result={result} token={auth.token} />
+      <ShareCard result={result} />
+
       <section className="footnote">
         <p>{result.disclaimer}</p>
         {result.modelVisionError && <p>{result.modelVisionError}</p>}
       </section>
+
+      <button
+        className="back-top"
+        type="button"
+        aria-label="返回页面顶部"
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      >
+        <ArrowUp size={18} />
+      </button>
     </>
   );
 }

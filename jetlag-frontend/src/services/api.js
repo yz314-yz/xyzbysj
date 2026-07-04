@@ -69,10 +69,33 @@ export function loadHistoryDetail(token, id) {
   return fetchJson(`/api/v1/history/${id}`, { token });
 }
 
+export function loadCheckins(token, diagnosisId) {
+  return fetchJson(`/api/v1/checkins/${diagnosisId}`, { token });
+}
+
+export function saveCheckin(token, payload) {
+  return fetchJson('/api/v1/checkins', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    token,
+  });
+}
+
 export function submitDiagnosis(form, token) {
   return fetchJson('/api/v1/diagnose', {
     method: 'POST',
     body: form,
+    token,
+    timeout: REQUEST_TIMEOUT_MS,
+  });
+}
+
+export function sendChatMessage({ question, result, messages }, token) {
+  return fetchJson('/api/v1/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question, result, messages }),
     token,
     timeout: REQUEST_TIMEOUT_MS,
   });

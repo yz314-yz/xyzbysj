@@ -2,7 +2,7 @@
 const { OpenAI } = require('openai');
 const { logger } = require('./logger');
 
-const DEFAULT_QWEN_MODEL = 'Qwen/Qwen2.5-VL-3B-Instruct';
+const DEFAULT_QWEN_MODEL =  'Qwen/Qwen3-VL-32B-Instruct';
 const DEFAULT_TIMEOUT_MS = 30 * 1000;
 const COMPATIBLE_PROVIDER_PLACEHOLDER_KEY = 'local-compatible-provider-without-key';
 
@@ -14,7 +14,7 @@ function getVisionProviderStatus() {
 
   return {
     enabled,
-    provider: 'Qwen2.5-VL',
+    provider: 'Qwen3-VL',
     model,
     baseURL: baseURL || '未配置',
     timeoutMs,

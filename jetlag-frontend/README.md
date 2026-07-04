@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-默认会读取 `VITE_API_BASE` 或后端输出的 `/env.js`，开发环境未配置时回退到 `http://localhost:3000`。
+默认会优先读取 `/env.js` 中的运行期配置。容器部署时可通过 `PUBLIC_API_BASE` 注入接口地址；本地开发仍可使用 `VITE_API_BASE`，未配置时回退到 `http://localhost:3000`。
 
 ## 构建
 

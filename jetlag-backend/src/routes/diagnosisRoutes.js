@@ -4,7 +4,7 @@ const rateLimit = require('express-rate-limit');
 const { config } = require('../config');
 const { diagnose, getHistoryItem, listHistory } = require('../controllers/diagnosisController');
 const { optionalAuth, requireAuth } = require('../middleware/auth');
-const { upload } = require('../middleware/upload');
+const { upload, validateUploadedImages } = require('../middleware/upload');
 
 const router = express.Router();
 
@@ -32,6 +32,7 @@ router.post(
     { name: 'face', maxCount: 1 },
     { name: 'palm', maxCount: 1 },
   ]),
+  validateUploadedImages,
   diagnose
 );
 

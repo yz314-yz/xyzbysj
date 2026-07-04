@@ -39,14 +39,20 @@ export function AuthPanel({ auth }) {
           <UserPlus size={14} /> 注册
         </button>
       </div>
-      <input placeholder="用户名" value={username} onChange={(event) => setUsername(event.target.value)} />
       <input
+        autoComplete="username"
+        placeholder="用户名"
+        value={username}
+        onChange={(event) => setUsername(event.target.value)}
+      />
+      <input
+        autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
         placeholder="密码"
         type="password"
         value={password}
         onChange={(event) => setPassword(event.target.value)}
       />
-      <button type="button" onClick={submit} disabled={auth.authLoading}>
+      <button type="submit" disabled={auth.authLoading}>
         {auth.authLoading ? '处理中...' : mode === 'register' ? '创建账号' : '登录账号'}
       </button>
     </form>

@@ -21,6 +21,7 @@ services:
       OPEN_MODEL_BASE_URL: ${OPEN_MODEL_BASE_URL:-}
       OPEN_MODEL_API_KEY: ${OPEN_MODEL_API_KEY:-}
       OPEN_MODEL_NAME: ${OPEN_MODEL_NAME:-Qwen/Qwen2.5-VL-3B-Instruct}
+      OPEN_TEXT_MODEL_NAME: ${OPEN_TEXT_MODEL_NAME:-Qwen/Qwen2.5-7B-Instruct}
       OPEN_MODEL_TIMEOUT_MS: ${OPEN_MODEL_TIMEOUT_MS:-30000}
       CORS_ORIGIN: ${CORS_ORIGIN:-}
     ports:
@@ -36,7 +37,7 @@ services:
     container_name: tcm-wellness-frontend
     restart: unless-stopped
     environment:
-      VITE_API_BASE: ${PUBLIC_API_BASE:-}
+      PUBLIC_API_BASE: ${PUBLIC_API_BASE:-}
     ports:
       - "${FRONTEND_PORT:-8080}:8080"
     depends_on:

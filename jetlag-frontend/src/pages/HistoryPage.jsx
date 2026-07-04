@@ -151,6 +151,35 @@ export function HistoryPage({ auth }) {
                         </div>
                       </div>
 
+                      <div className="history-section">
+                        <h4>打卡记录</h4>
+                        {detail.checkins?.length ? (
+                          <>
+                            <p>
+                              已打卡 {detail.checkinSummary?.completedDays || detail.checkins.length}/7 天
+                              {detail.checkinSummary?.averageRating &&
+                                `；平均感受 ${detail.checkinSummary.averageRating}/5`}
+                            </p>
+                            <div className="history-checkin-grid">
+                              {detail.checkins.map((checkin) => (
+                                <div key={checkin.day} className="history-checkin-day">
+                                  <strong>第 {checkin.day} 天</strong>
+                                  <p>
+                                    饮食{checkin.dietDone ? '已执行' : '未执行'} ·
+                                    运动{checkin.exerciseDone ? '已执行' : '未执行'} ·
+                                    作息{checkin.sleepDone ? '已执行' : '未执行'}
+                                  </p>
+                                  {checkin.rating && <small>主观感受 {checkin.rating}/5</small>}
+                                  {checkin.note && <p className="muted">{checkin.note}</p>}
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        ) : (
+                          <p className="muted">暂未打卡。</p>
+                        )}
+                      </div>
+
                       {detail.result?.observation &&
                         Object.values(detail.result.observation).some((v) => v) && (
                           <div className="history-section">

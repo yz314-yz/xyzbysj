@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Particles from '@tsparticles/react';
 import { ArrowRight, Leaf } from 'lucide-react';
+
+import { InkBackground } from '../components/InkBackground';
 
 // 根据当前子午流注时辰给出一句养生提示
 function currentMeridianHint(hour) {
@@ -23,58 +24,13 @@ function currentMeridianHint(hour) {
   return table[index] || table[0];
 }
 
-// 经络粒子流配置：青绿墨色，低速流动，鼠标轻推
-function buildParticleOptions(theme) {
-  const isDark = theme === 'dark';
-  return {
-    fullScreen: { enable: false },
-    background: { color: 'transparent' },
-    fpsLimit: 60,
-    detectRetina: true,
-    particles: {
-      color: { value: isDark ? '#9fd3b4' : '#2f6f54' },
-      links: {
-        enable: true,
-        color: isDark ? '#3a7d5c' : '#7bbf9a',
-        distance: 140,
-        opacity: isDark ? 0.35 : 0.5,
-        width: 1,
-      },
-      move: {
-        enable: true,
-        speed: 0.7,
-        direction: 'none',
-        outModes: { default: 'bounce' },
-      },
-      number: {
-        value: typeof window !== 'undefined' && window.innerWidth < 768 ? 30 : 60,
-        density: { enable: true, area: 900 },
-      },
-      opacity: { value: { min: 0.25, max: 0.7 } },
-      shape: { type: 'circle' },
-      size: { value: { min: 1, max: 3 } },
-    },
-    interactivity: {
-      events: {
-        onHover: { enable: true, mode: 'push' },
-        onClick: { enable: true, mode: 'repulse' },
-      },
-      modes: {
-        push: { quantity: 3 },
-        repulse: { distance: 120 },
-      },
-    },
-  };
-}
-
 export function CoverPage({ theme }) {
   const navigate = useNavigate();
-  const options = useMemo(() => buildParticleOptions(theme), [theme]);
   const meridianHint = useMemo(() => currentMeridianHint(new Date().getHours()), []);
 
   return (
     <section className="cover">
-      <Particles id="tcm-cover" options={options} className="cover-canvas" />
+      <InkBackground theme={theme} />
       <div className="cover-inner">
         <div className="cover-brand">
           <span className="cover-mark">岐</span>

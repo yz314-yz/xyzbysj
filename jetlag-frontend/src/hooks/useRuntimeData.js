@@ -7,6 +7,8 @@ export function useRuntimeData() {
   const [symptomOptions, setSymptomOptions] = useState(fallbackSymptomOptions);
   const [modelName, setModelName] = useState(DEFAULT_MODEL_NAME);
   const [visionConfigured, setVisionConfigured] = useState(false);
+  const [offlineVisionAvailable, setOfflineVisionAvailable] = useState(false);
+  const [requireModelEvidence, setRequireModelEvidence] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -29,6 +31,11 @@ export function useRuntimeData() {
       if (healthResponse.status === 'fulfilled') {
         setModelName(healthResponse.value.visionModelName || DEFAULT_MODEL_NAME);
         setVisionConfigured(Boolean(healthResponse.value.visionModelReady));
+        setOfflineVisionAvailable(Boolean(
+          healthResponse.value.offlineEnhancedReady
+          ?? healthResponse.value.visionModelReady
+        ));
+        setRequireModelEvidence(Boolean(healthResponse.value.requireModelEvidence));
       }
     }
 
@@ -38,6 +45,6 @@ export function useRuntimeData() {
     };
   }, []);
 
-  return { modelName, symptomOptions, visionConfigured };
+  return { modelName, offlineVisionAvailable, requireModelEvidence, symptomOptions, visionConfigured };
 }
 

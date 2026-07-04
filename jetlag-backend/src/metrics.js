@@ -92,14 +92,26 @@ function renderMetrics() {
   });
 
   lines.push(
-    '# HELP tcm_http_request_duration_seconds Total request duration and count by method and route.',
-    '# TYPE tcm_http_request_duration_seconds summary'
+    '# HELP tcm_http_request_duration_seconds_sum Total HTTP request duration seconds by method and route.',
+    '# TYPE tcm_http_request_duration_seconds_sum counter'
   );
   requestDurations.forEach((value, key) => {
     const labels = labelsFromKey(key);
     const metric = labels.metric;
     delete labels.metric;
+    if (metric !== 'sum') return;
     lines.push(renderMetricLine(`tcm_http_request_duration_seconds_${metric}`, labels, value.toFixed(6)));
+  });
+  lines.push(
+    '# HELP tcm_http_request_duration_seconds_count Total observed HTTP requests for duration tracking by method and route.',
+    '# TYPE tcm_http_request_duration_seconds_count counter'
+  );
+  requestDurations.forEach((value, key) => {
+    const labels = labelsFromKey(key);
+    const metric = labels.metric;
+    delete labels.metric;
+    if (metric !== 'count') return;
+    lines.push(renderMetricLine(`tcm_http_request_duration_seconds_${metric}`, labels, value));
   });
 
   return `${lines.join('\n')}\n`;

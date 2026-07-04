@@ -1,11 +1,28 @@
-﻿import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, test, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { App } from './App';
+import { PlanTable } from './components/PlanTable';
 
-function renderApp(initialEntry = '/collection') {
+vi.mock('react-pageflip', async () => {
+  const React = await vi.importActual('react');
+  return {
+    default: React.forwardRef(function MockFlipBook({ children, onFlip }, ref) {
+      React.useImperativeHandle(ref, () => ({
+        pageFlip: () => ({
+          flip: (page) => onFlip?.({ data: page }),
+          flipNext: () => {},
+          flipPrev: () => {},
+        }),
+      }));
+      return <div data-testid="mock-flipbook">{children}</div>;
+    }),
+  };
+});
+
+function renderApp(initialEntry = '/') {
   return render(
     <MemoryRouter initialEntries={[initialEntry]}>
       <App />
@@ -15,6 +32,27 @@ function renderApp(initialEntry = '/collection') {
 
 beforeEach(() => {
   localStorage.clear();
+  document.documentElement.removeAttribute('data-theme');
+  HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
+    addColorStop: vi.fn(),
+    arc: vi.fn(),
+    beginPath: vi.fn(),
+    clearRect: vi.fn(),
+    createRadialGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+    drawImage: vi.fn(),
+    fill: vi.fn(),
+    lineTo: vi.fn(),
+    moveTo: vi.fn(),
+    setTransform: vi.fn(),
+    stroke: vi.fn(),
+  }));
+  vi.stubGlobal('matchMedia', vi.fn(() => ({
+    matches: false,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  })));
+  vi.stubGlobal('requestAnimationFrame', vi.fn(() => 1));
+  vi.stubGlobal('cancelAnimationFrame', vi.fn());
   vi.stubGlobal('fetch', vi.fn((url) => {
     if (String(url).endsWith('/api/v1/symptoms')) {
       return Promise.resolve(new Response(JSON.stringify({
@@ -34,27 +72,56 @@ beforeEach(() => {
 });
 
 describe('App', () => {
-  test('keeps submit disabled until a symptom is selected', async () => {
-    renderApp('/collection');
-    const submit = await screen.findByRole('button', { name: '生成七日调理计划' });
-    expect(submit).toBeDisabled();
+  test('home page exposes the book entry and theme toggle', async () => {
+    renderApp('/');
+
+    const entryLinks = await screen.findAllByRole('link', { name: '启卷' });
+    expect(entryLinks).toHaveLength(2);
+    entryLinks.forEach((link) => expect(link).toHaveAttribute('href', '/book'));
+
+    await userEvent.click(screen.getByRole('button', { name: '切换明暗主题' }));
+
+    expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
+    expect(localStorage.getItem('tcm-theme')).toBe('dark');
+  });
+
+  test('login page returns to the current book route', () => {
+    renderApp('/login');
+
+    expect(screen.getByRole('link', { name: '返回望诊采集' })).toHaveAttribute('href', '/book');
+  });
+
+  test('book assessment requires profile fields before submitting', async () => {
+    renderApp('/book');
+
+    expect(await screen.findByRole('button', { name: /公网体验/ })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /离线增强/ })).toBeDisabled();
 
     await userEvent.click(await screen.findByRole('button', { name: '口干咽燥' }));
-    expect(submit).toBeEnabled();
+    await userEvent.click(screen.getByRole('button', { name: '生成方案' }));
+
+    expect(await screen.findByText(/请补全基本信息/)).toBeInTheDocument();
+    expect(screen.getByText('请填写年龄')).toBeInTheDocument();
+    expect(screen.getByText('请选择性别')).toBeInTheDocument();
   });
 
-  test('renders route navigation pages', async () => {
-    renderApp('/collection');
-    await userEvent.click(screen.getByRole('link', { name: /用户手册/ }));
-    expect(await screen.findByText('1. 采集信息')).toBeInTheDocument();
-  });
+  test('renders the seven-day plan as a single-open mobile accordion', async () => {
+    const result = {
+      sevenDayPlan: [
+        { day: '第1天', theme: '健脾', diet: '山药小米粥', exercise: '八段锦', sleep: '23 点前睡', note: '先固护脾胃' },
+        { day: '第2天', theme: '疏肝', diet: '玫瑰陈皮茶', exercise: '舒展肩颈', sleep: '午间小憩', note: '减少郁滞' },
+      ],
+    };
 
-  test('renders cover page with disclaimer on root route', async () => {
-    renderApp('/');
-    const heading = await screen.findByRole('heading', { level: 1 });
-    expect(heading).toHaveTextContent('岐养七日');
-    expect(screen.getByText(/AI 分析仅供学术参考/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /进入系统/ })).toBeInTheDocument();
+    render(<PlanTable result={result} />);
+
+    const mobilePlan = screen.getByLabelText('七日计划移动端折叠列表');
+    expect(within(mobilePlan).getByText('山药小米粥')).toBeInTheDocument();
+    expect(within(mobilePlan).queryByText('玫瑰陈皮茶')).not.toBeInTheDocument();
+
+    await userEvent.click(within(mobilePlan).getByRole('button', { name: /第2天/ }));
+
+    expect(within(mobilePlan).getByText('玫瑰陈皮茶')).toBeInTheDocument();
+    expect(within(mobilePlan).queryByText('山药小米粥')).not.toBeInTheDocument();
   });
 });
-

@@ -6,9 +6,22 @@ const allowedOrigins = (process.env.CORS_ORIGIN || '')
   .map((item) => item.trim())
   .filter(Boolean);
 
+function numberFromEnv(name, fallback, { min = -Infinity, max = Infinity } = {}) {
+  const raw = process.env[name];
+  const value = raw === undefined || raw === '' ? fallback : Number(raw);
+  if (!Number.isFinite(value) || value < min || value > max) return fallback;
+  return value;
+}
+
+function booleanFromEnv(name, fallback = false) {
+  const raw = process.env[name];
+  if (raw === undefined || raw === '') return fallback;
+  return ['1', 'true', 'yes', 'on'].includes(String(raw).trim().toLowerCase());
+}
+
 const config = {
   rootDir,
-  port: Number(process.env.PORT || 3000),
+  port: numberFromEnv('PORT', 3000, { min: 1, max: 65535 }),
   publicDir: path.join(rootDir, 'public'),
   uploadsDir: path.join(rootDir, 'uploads'),
   dataDir: process.env.DATA_DIR || path.join(rootDir, 'data'),
@@ -24,8 +37,12 @@ const config = {
     'http://localhost:4173',
     'http://127.0.0.1:4173',
   ]),
-  diagnoseRateWindowMs: Number(process.env.DIAGNOSE_RATE_WINDOW_MS || 60 * 1000),
-  diagnoseRateMax: Number(process.env.DIAGNOSE_RATE_MAX || 10),
+  diagnoseRateWindowMs: numberFromEnv('DIAGNOSE_RATE_WINDOW_MS', 60 * 1000, { min: 1000 }),
+  diagnoseRateMax: numberFromEnv('DIAGNOSE_RATE_MAX', 10, { min: 1 }),
+  authRateWindowMs: numberFromEnv('AUTH_RATE_WINDOW_MS', 60 * 1000, { min: 1000 }),
+  authRateMax: numberFromEnv('AUTH_RATE_MAX', 5, { min: 1 }),
+  jsonBodyLimit: process.env.JSON_BODY_LIMIT || '1mb',
+  requireModelEvidence: booleanFromEnv('REQUIRE_MODEL_EVIDENCE', false),
 };
 
 module.exports = { config };

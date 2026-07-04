@@ -37,6 +37,23 @@ function ensureDatabase() {
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
     );
+
+    CREATE TABLE IF NOT EXISTS checkins (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      diagnosis_id INTEGER NOT NULL,
+      day INTEGER NOT NULL CHECK (day BETWEEN 1 AND 7),
+      diet_done INTEGER NOT NULL DEFAULT 0,
+      exercise_done INTEGER NOT NULL DEFAULT 0,
+      sleep_done INTEGER NOT NULL DEFAULT 0,
+      rating INTEGER CHECK (rating BETWEEN 1 AND 5),
+      note TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE (user_id, diagnosis_id, day),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (diagnosis_id) REFERENCES diagnoses(id) ON DELETE CASCADE
+    );
   `);
 
   logger.info('SQLite 数据库已就绪：' + config.databasePath);

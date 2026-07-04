@@ -1,5 +1,4 @@
 const express = require('express');
-const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
@@ -10,6 +9,8 @@ const { config } = require('./config');
 const { httpLogStream } = require('./logger');
 const { errorHandler, createHttpError, notFoundHandler } = require('./middleware/errors');
 const authRoutes = require('./routes/authRoutes');
+const chatRoutes = require('./routes/chatRoutes');
+const checkinRoutes = require('./routes/checkinRoutes');
 const diagnosisRoutes = require('./routes/diagnosisRoutes');
 const healthRoutes = require('./routes/healthRoutes');
 const meridianRoutes = require('./routes/meridianRoutes');
@@ -98,8 +99,8 @@ function createApp() {
   });
   app.use(morgan('combined', { stream: httpLogStream }));
   app.use(metricsMiddleware);
-  app.use(express.json({ limit: '20mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '20mb' }));
+  app.use(express.json({ limit: config.jsonBodyLimit }));
+  app.use(express.urlencoded({ extended: true, limit: config.jsonBodyLimit }));
 
   app.get('/env.js', (req, res) => {
     res.type('application/javascript').send(
@@ -112,6 +113,8 @@ function createApp() {
   app.use(healthRoutes);
   app.use(metricsRoutes);
   app.use('/api/v1/auth', authRoutes);
+  app.use('/api/v1', chatRoutes);
+  app.use('/api/v1', checkinRoutes);
   app.use('/api/v1', symptomRoutes);
   app.use('/api/v1', diagnosisRoutes);
   app.use('/api/v1', meridianRoutes);
