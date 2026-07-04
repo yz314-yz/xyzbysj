@@ -19,6 +19,17 @@ function booleanFromEnv(name, fallback = false) {
   return ['1', 'true', 'yes', 'on'].includes(String(raw).trim().toLowerCase());
 }
 
+function trustProxyFromEnv(name, fallback = false) {
+  const raw = process.env[name];
+  if (raw === undefined || raw === '') return fallback;
+  const value = String(raw).trim().toLowerCase();
+  if (['1', 'true', 'yes', 'on'].includes(value)) return 1;
+  if (['0', 'false', 'no', 'off'].includes(value)) return false;
+  const numberValue = Number(value);
+  if (Number.isInteger(numberValue) && numberValue >= 0) return numberValue;
+  return raw.trim();
+}
+
 const config = {
   rootDir,
   port: numberFromEnv('PORT', 3000, { min: 1, max: 65535 }),
@@ -43,6 +54,7 @@ const config = {
   authRateMax: numberFromEnv('AUTH_RATE_MAX', 5, { min: 1 }),
   jsonBodyLimit: process.env.JSON_BODY_LIMIT || '1mb',
   requireModelEvidence: booleanFromEnv('REQUIRE_MODEL_EVIDENCE', false),
+  trustProxy: trustProxyFromEnv('TRUST_PROXY', process.env.NODE_ENV === 'production' ? 1 : false),
 };
 
 module.exports = { config };

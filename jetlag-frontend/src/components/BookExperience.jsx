@@ -28,11 +28,17 @@ function useBookDimensions() {
   const [dims, setDims] = useState({ width: 460, height: 620 });
   useEffect(() => {
     let timer = null;
+    let lastWidth = window.innerWidth;
     function calc() {
       clearTimeout(timer);
       timer = setTimeout(() => {
         const vw = window.innerWidth;
         const vh = window.innerHeight;
+        const activeTag = document.activeElement?.tagName || '';
+        const isEditing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeTag) || document.activeElement?.isContentEditable;
+        const isSoftKeyboardResize = vw < 768 && isEditing && Math.abs(vw - lastWidth) < 2;
+        if (isSoftKeyboardResize) return;
+        lastWidth = vw;
         if (vw < 768) {
           setDims({ width: Math.min(vw - 24, 440), height: Math.min(vh - 90, 640) });
         } else {
@@ -365,6 +371,23 @@ export function BookExperience({
     swipeStartRef.current = null;
   }
 
+  function handleBookFocusCapture(event) {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    if (!target.matches('input, textarea, select')) return;
+
+    const pageBody = target.closest('.book-page-body');
+    if (!pageBody) return;
+
+    window.requestAnimationFrame(() => {
+      const bodyRect = pageBody.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const targetTop = targetRect.top - bodyRect.top + pageBody.scrollTop;
+      pageBody.scrollTop = Math.max(0, targetTop - bodyRect.height * 0.35);
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    });
+  }
+
   // 实际翻页索引：0=封面, 1=序, 2=问诊, 3=辨识, 4 起为调理页，后续页随计划长度动态后移。
   const tocItems = [
     { page: 0, title: '封面' },
@@ -380,6 +403,7 @@ export function BookExperience({
   return (
     <div
       className="book-shell"
+      onFocusCapture={handleBookFocusCapture}
       onPointerCancel={clearBookSwipe}
       onPointerDown={handleBookPointerDown}
       onPointerLeave={clearBookSwipe}

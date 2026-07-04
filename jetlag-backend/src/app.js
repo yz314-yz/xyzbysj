@@ -59,6 +59,7 @@ function isAllowedCorsOrigin(origin, requestHost) {
 function createApp() {
   const app = express();
   app.disable('x-powered-by');
+  app.set('trust proxy', config.trustProxy);
 
   app.use(helmet({
     contentSecurityPolicy: {

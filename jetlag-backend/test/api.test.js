@@ -148,6 +148,27 @@ describe('TCM wellness API', () => {
     expect(res.body.data.engineStatus.vision.requested).toBe(false);
   });
 
+  test('accepts proxied diagnosis requests with X-Forwarded-For when trust proxy is enabled', async () => {
+    const originalTrustProxy = config.trustProxy;
+    config.trustProxy = 1;
+    const proxiedApp = createApp();
+
+    try {
+      const res = await request(proxiedApp)
+        .post('/api/v1/diagnose')
+        .set('X-Forwarded-For', '203.0.113.24')
+        .field('inferenceMode', 'public-free')
+        .field('symptoms', JSON.stringify(['fatigue']))
+        .field('profile', JSON.stringify({ age: '24', gender: '女' }))
+        .field('hour', '10')
+        .expect(200);
+
+      expect(res.body.data.sevenDayPlan).toHaveLength(7);
+    } finally {
+      config.trustProxy = originalTrustProxy;
+    }
+  });
+
   test('strict product mode rejects lightweight browser features', async () => {
     const originalRequireModelEvidence = config.requireModelEvidence;
     config.requireModelEvidence = true;
