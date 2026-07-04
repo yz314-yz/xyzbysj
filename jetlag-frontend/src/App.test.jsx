@@ -85,10 +85,10 @@ describe('App', () => {
     expect(localStorage.getItem('tcm-theme')).toBe('dark');
   });
 
-  test('login page returns to the current book route', () => {
+  test('login page returns to the current book route', async () => {
     renderApp('/login');
 
-    expect(screen.getByRole('link', { name: '返回望诊采集' })).toHaveAttribute('href', '/book');
+    expect(await screen.findByRole('link', { name: '返回望诊采集' })).toHaveAttribute('href', '/book');
   });
 
   test('book assessment requires profile fields before submitting', async () => {

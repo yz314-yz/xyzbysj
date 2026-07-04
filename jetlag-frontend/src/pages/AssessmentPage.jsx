@@ -20,19 +20,6 @@ import { SymptomsPanel } from '../components/SymptomsPanel';
 import { VisionPanel } from '../components/VisionPanel';
 import { submitDiagnosis } from '../services/api';
 
-const IMAGE_LABELS = { tongue: '舌像', face: '面相', palm: '手相' };
-
-function getImageQualityError(features) {
-  const issues = Object.entries(features)
-    .filter(([, item]) => item?.safetyGate !== 'pass' || Number(item?.confidence || 0) < 0.55)
-    .map(([key, item]) => {
-      const details = Object.values(item?.observedFeatures || {}).filter(Boolean).join('、');
-      return `${IMAGE_LABELS[key] || key}${details ? `（${details}）` : ''}`;
-    });
-  if (!issues.length) return '';
-  return `图片质量不足：${issues.join('；')}。请在自然光、画面清晰、主体居中的条件下重新拍摄。`;
-}
-
 export function AssessmentPage({ auth, modelName, requireModelEvidence = false, symptomOptions, visionConfigured }) {
   const [inferenceMode, setInferenceMode] = useState(INFERENCE_MODE_PUBLIC);
   const [selected, setSelected] = useState([]);
@@ -98,12 +85,6 @@ export function AssessmentPage({ auth, modelName, requireModelEvidence = false, 
   async function submit() {
     if (!hasInput) {
       setFormError('请至少选择一个症状或上传一张图片。');
-      return;
-    }
-    const qualityError = getImageQualityError(browserFeatures);
-    if (qualityError) {
-      setFormError(qualityError);
-      toast.error(qualityError);
       return;
     }
     if (requireModelEvidence && inferenceMode === INFERENCE_MODE_PUBLIC) {

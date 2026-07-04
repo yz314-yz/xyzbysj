@@ -42,6 +42,8 @@ body {
   background:var(--page)}
 button,input,select {
   font:inherit}
+button,[role=button],input,select,textarea {
+  touch-action:manipulation}
 .shell {
   min-height:100vh;
   display:grid;
@@ -1012,9 +1014,26 @@ input[aria-invalid="true"],select[aria-invalid="true"] {
 .drops,.profile-row,.feature-list,.doc-grid {
   grid-template-columns:1fr}
 .drop {
-  min-height:154px}
+  min-height:168px;
+  padding:14px}
 .drop-media {
-  aspect-ratio:16 / 9}
+  aspect-ratio:5 / 3}
+.drop strong {
+  font-size:18px}
+.drop small {
+  font-size:13px}
+.drop-remove {
+  top:10px;
+  right:10px;
+  width:48px;
+  height:48px}
+.profile-row label {
+  font-size:13px}
+input,select {
+  min-height:48px;
+  font-size:16px}
+.primary,.ghost,.icon-action {
+  min-height:48px}
 .chips {
   gap:8px}
 .chip {
@@ -2853,15 +2872,59 @@ to {
 }
 @media(max-width:768px) {
   .book-nav {
-  bottom:16px;
-  width:40px;
-  height:40px}
+  bottom:max(18px,calc(env(safe-area-inset-bottom) + 10px));
+  width:48px;
+  height:48px}
 .book-nav-prev {
   left:12px}
 .book-nav-next {
   right:12px}
 .book-topbar {
   padding:0 10px}
+.book-page-frame {
+  padding:14px 12px 16px}
+.book-page-margin {
+  width:22px;
+  margin-right:6px}
+.book-page-body {
+  padding:4px 4px 28px}
+.bk-symptoms {
+  gap:8px}
+.bk-symptom-chip {
+  min-height:36px;
+  padding:8px 12px;
+  font-size:13px;
+  border-radius:18px}
+.bk-drops {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px}
+.bk-drops>div {
+  min-width:0}
+.bk-drops .drop {
+  min-height:112px;
+  padding:8px 6px;
+  border-radius:8px}
+.bk-drops .drop-media {
+  aspect-ratio:1 / 1}
+.bk-drops .drop strong {
+  font-size:12px}
+.bk-drops .drop small {
+  font-size:11px;
+  line-height:1.25}
+.bk-drops .drop b {
+  font-size:10px}
+.bk-drops .drop-remove {
+  top:4px;
+  right:4px;
+  width:40px;
+  height:40px}
+.bk-assessment .profile-row input,.bk-assessment .profile-row select {
+  min-height:42px;
+  padding:8px 10px;
+  font-size:16px}
+.bk-submit-btn,.bk-reset-btn {
+  min-height:44px}
 .book-toc-panel {
   left:16px;
   right:16px;
@@ -3590,4 +3653,48 @@ to {
 }
 .bk-cover-thread {
   filter:drop-shadow(0 3px 4px rgba(34,20,12,.24));
+}
+
+.route-loading {
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+  color:var(--muted);
+  background:var(--page);
+  font-weight:700}
+.scene-wrapper.is-static {
+  perspective:none;
+  transform-style:flat}
+.scene-wrapper.is-static .scene-bg-image {
+  transform:scale(1.02);
+  filter:none}
+.scene-wrapper.is-static .scene-moon {
+  transform:none;
+  box-shadow:none}
+
+@media (max-width:768px), (pointer:coarse) {
+  .scene-wrapper {
+    perspective:none;
+    transform-style:flat}
+  .scene-wrapper.is-static .scene-mist,.scene-wrapper.is-static .scene-water-canvas {
+    display:none}
+  .book-shell {
+    perspective:none}
+  .book-shell:before,.book-shell .stf__parent:after {
+    display:none}
+  .book-shell .stf__parent {
+    transform:none;
+    filter:drop-shadow(0 16px 22px rgba(44,35,23,.18))}
+  .book-shell .stf__block {
+    perspective:none;
+    transform-style:flat}
+  .book-page {
+    box-shadow:inset 8px 0 14px rgba(81,61,37,.08),inset -6px 0 10px rgba(255,255,255,.42)}
+  .book-topbar,.book-nav,.book-toc-overlay,.book-toc-panel,.landing-theme-toggle {
+    -webkit-backdrop-filter:none;
+    backdrop-filter:none}
+  .codex-book,.cover-taiji,.bk-hint,.status-pill:before {
+    animation:none!important}
+  .feature-list article:after,.drop:after,.primary:after,.engine-banner:after,.history-list article:after {
+    display:none!important}
 }

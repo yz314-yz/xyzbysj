@@ -10,7 +10,6 @@ const { logger } = require('../logger');
 const INFERENCE_MODE_PUBLIC = 'public-free';
 const INFERENCE_MODE_OFFLINE_QWEN = 'offline-qwen';
 const IMAGE_KEYS = ['tongue', 'face', 'palm'];
-const IMAGE_LABELS = { tongue: '舌像', face: '面相', palm: '手相' };
 
 const diagnoseSchema = z.object({
   symptoms: z.array(z.string()).default([]),
@@ -178,23 +177,6 @@ function assertModelEvidence({ inferenceMode, localVision, qwenVision }) {
       '上线严格模式要求离线增强版必须成功调用 Qwen2.5-VL。当前本机模型不可用，不能生成上线级七日方案。'
     );
   }
-}
-
-function assertImageQuality(localVision) {
-  if (!localVision?.parsed) return;
-  const issues = Object.entries(localVision.parsed)
-    .filter(([, item]) => item.safetyGate !== 'pass' || item.confidence < 0.55)
-    .map(([key, item]) => {
-      const details = Object.values(item.observedFeatures || {}).filter(Boolean).join('、');
-      return `${IMAGE_LABELS[key] || key}${details ? `（${details}）` : ''}`;
-    });
-
-  if (!issues.length) return;
-
-  throw createHttpError(
-    422,
-    `图片质量不足：${issues.join('；')}。请在自然光、画面清晰、主体居中的条件下重新拍摄后再生成方案。`
-  );
 }
 
 function applyVisionTextScores(scores, visionText) {
@@ -615,8 +597,6 @@ async function runDiagnosis({ body, files, user }) {
   const localVision = buildLocalVision(browserFeatures);
   let qwenVision = null;
   let modelVisionError = null;
-
-  assertImageQuality(localVision);
 
   const hasUploadedImages = Boolean(
     (files?.tongue?.[0]) || (files?.face?.[0]) || (files?.palm?.[0])

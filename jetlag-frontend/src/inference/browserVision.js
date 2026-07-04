@@ -1,7 +1,12 @@
-const MAX_DIMENSION = 1080;
-const JPEG_QUALITY = 0.8;
-const DARK_THRESHOLD = 60;
-const BLUR_THRESHOLD = 9;
+const MAX_DIMENSION = 960;
+const JPEG_QUALITY = 0.76;
+const DARK_WARNING_THRESHOLD = 45;
+const BRIGHT_WARNING_THRESHOLD = 238;
+const QUALITY_DARK_FLOOR = 34;
+const QUALITY_BRIGHT_CEILING = 250;
+const BLUR_WARNING_THRESHOLD = 5;
+const QUALITY_BLUR_FLOOR = 3.2;
+const TEXTURE_CLEAR_THRESHOLD = 20;
 
 const SCOPE_LABELS = {
   tongue: '舌像',
@@ -15,14 +20,14 @@ function round(value, digits = 1) {
 }
 
 function classifyLight(brightness) {
-  if (brightness < DARK_THRESHOLD) return '光线偏暗';
-  if (brightness > 220) return '光线偏亮';
+  if (brightness < DARK_WARNING_THRESHOLD) return '光线偏暗';
+  if (brightness > BRIGHT_WARNING_THRESHOLD) return '光线偏亮';
   return '光线可用';
 }
 
 function classifyClarity(sharpness) {
-  if (sharpness < BLUR_THRESHOLD) return '清晰度偏低';
-  if (sharpness > 24) return '纹理清晰';
+  if (sharpness < BLUR_WARNING_THRESHOLD) return '清晰度偏低';
+  if (sharpness > TEXTURE_CLEAR_THRESHOLD) return '纹理清晰';
   return '清晰度可用';
 }
 
@@ -85,10 +90,7 @@ function classifyColorTone({ r, g, b }, scope) {
   return warmth > 26 ? '暖色倾向' : '色调平和';
 }
 
-function computeImageMetrics(ctx, width, height) {
-  const sampleSize = Math.min(96, width, height);
-  const sx = Math.max(0, Math.floor((width - sampleSize) / 2));
-  const sy = Math.max(0, Math.floor((height - sampleSize) / 2));
+function computeRegionMetrics(ctx, sx, sy, sampleSize) {
   const imageData = ctx.getImageData(sx, sy, sampleSize, sampleSize);
   const { data } = imageData;
   let totalBrightness = 0;
@@ -138,11 +140,38 @@ function computeImageMetrics(ctx, width, height) {
   };
 }
 
+function scoreSample(metrics) {
+  const brightnessScore = 1 - Math.min(Math.abs(metrics.brightness - 145) / 145, 1);
+  return brightnessScore * 10 + metrics.sharpness;
+}
+
+function computeImageMetrics(ctx, width, height) {
+  const sampleSize = Math.min(128, width, height);
+  const half = sampleSize / 2;
+  const centers = [
+    [0.5, 0.5],
+    [0.5, 0.42],
+    [0.5, 0.58],
+    [0.42, 0.5],
+    [0.58, 0.5],
+  ];
+
+  const samples = centers.map(([x, y]) => {
+    const sx = Math.max(0, Math.min(width - sampleSize, Math.round(width * x - half)));
+    const sy = Math.max(0, Math.min(height - sampleSize, Math.round(height * y - half)));
+    return computeRegionMetrics(ctx, sx, sy, sampleSize);
+  });
+
+  return samples.sort((a, b) => scoreSample(b) - scoreSample(a))[0];
+}
+
 function buildFeaturePayload({ scope, width, height, sourceType, sourceSize, metrics }) {
   const lightLevel = classifyLight(metrics.brightness);
   const clarity = classifyClarity(metrics.sharpness);
   const colorTone = classifyColorTone(metrics.averageColor, scope);
-  const imageQuality = lightLevel === '光线可用' && clarity !== '清晰度偏低' ? 'good' : 'needs_review';
+  const hasUsableLight = metrics.brightness >= QUALITY_DARK_FLOOR && metrics.brightness <= QUALITY_BRIGHT_CEILING;
+  const hasUsableClarity = metrics.sharpness >= QUALITY_BLUR_FLOOR;
+  const imageQuality = hasUsableLight && hasUsableClarity ? 'good' : 'needs_review';
   const confidence = imageQuality === 'good' ? 0.76 : 0.58;
   const scopeLabel = SCOPE_LABELS[scope] || '图像';
   const featureText = [scopeLabel, lightLevel, clarity, colorTone].join('，');

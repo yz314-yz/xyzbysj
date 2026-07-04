@@ -12,36 +12,41 @@ export function useMeridianStream() {
     if (typeof window === 'undefined' || typeof EventSource === 'undefined') return undefined;
 
     let source;
-    try {
-      source = new EventSource(`${API_BASE}/api/v1/meridian-stream`);
-    } catch {
-      return undefined;
-    }
-
-    source.addEventListener('connected', () => {
-      // 连接成功，不打扰用户
-    });
-
-    source.addEventListener('message', (event) => {
+    const connectTimer = window.setTimeout(() => {
       try {
-        const payload = JSON.parse(event.data);
-        if (payload.type === 'meridian-reminder' && payload.meridian) {
-          const m = payload.meridian;
-          toast(
-            `⏰ ${m.name} · ${m.meridian}当令：${m.advice}`,
-            { duration: 8000, icon: '🫧' }
-          );
-        }
+        source = new EventSource(`${API_BASE}/api/v1/meridian-stream`);
       } catch {
-        // 忽略无法解析的消息
+        return;
       }
-    });
 
-    source.onerror = () => {
-      // 连接断开或失败，静默关闭，不重试（避免控制台刷屏）
+      source.addEventListener('connected', () => {
+        // 连接成功，不打扰用户
+      });
+
+      source.addEventListener('message', (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload.type === 'meridian-reminder' && payload.meridian) {
+            const m = payload.meridian;
+            toast(
+              `⏰ ${m.name} · ${m.meridian}当令：${m.advice}`,
+              { duration: 8000, icon: '🫧' }
+            );
+          }
+        } catch {
+          // 忽略无法解析的消息
+        }
+      });
+
+      source.onerror = () => {
+        // 连接断开或失败，静默关闭，不重试（避免控制台刷屏）
+        source?.close();
+      };
+    }, 1600);
+
+    return () => {
+      window.clearTimeout(connectTimer);
       source?.close();
     };
-
-    return () => source?.close();
   }, []);
 }

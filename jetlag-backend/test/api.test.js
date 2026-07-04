@@ -186,7 +186,7 @@ describe('TCM wellness API', () => {
     }
   });
 
-  test('rejects low quality browser image features before generating a plan', async () => {
+  test('accepts low quality browser image features and marks them for review', async () => {
     const browserFeatures = {
       tongue: {
         engine: 'browser-lightweight-v1',
@@ -211,9 +211,11 @@ describe('TCM wellness API', () => {
       .field('profile', JSON.stringify({ age: '24', gender: '女' }))
       .field('browserFeatures', JSON.stringify(browserFeatures))
       .field('hour', '10')
-      .expect(422);
+      .expect(200);
 
-    expect(res.body.error).toContain('图片质量不足');
+    expect(res.body.data.localVision.safetyGate).toBe('review');
+    expect(res.body.data.localVision.parsed.tongue.imageQuality).toBe('needs_review');
+    expect(res.body.data.sevenDayPlan).toHaveLength(7);
   });
 
   test('returns offline chat response when text model is not configured', async () => {

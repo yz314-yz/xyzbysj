@@ -4,6 +4,15 @@ import { Check, Trash2 } from 'lucide-react';
 import { ACCEPTED_IMAGE_INPUT, ACCEPTED_IMAGE_TYPES } from '../constants/app';
 import { analyzeBrowserImage } from '../inference/browserVision';
 
+const ACCEPTED_IMAGE_EXTENSIONS = /\.(jpe?g|png|webp|heic|heif)$/i;
+
+function isAcceptedImageCandidate(file) {
+  if (!file) return false;
+  if (ACCEPTED_IMAGE_TYPES.has(file.type)) return true;
+  if (file.type?.startsWith('image/') && file.type !== 'image/svg+xml') return true;
+  return ACCEPTED_IMAGE_EXTENSIONS.test(file.name || '');
+}
+
 export function FileDrop({ id, title, hint, icon: Icon, file, onChange, onRemove, onError }) {
   const inputRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -17,8 +26,8 @@ export function FileDrop({ id, title, hint, icon: Icon, file, onChange, onRemove
 
   async function selectFile(nextFile) {
     if (!nextFile) return;
-    if (!ACCEPTED_IMAGE_TYPES.has(nextFile.type)) {
-      onError('仅支持 JPG、PNG 或 WEBP 图片。');
+    if (!isAcceptedImageCandidate(nextFile)) {
+      onError('请上传手机照片或 JPG、PNG、WEBP、HEIC 图片。');
       if (inputRef.current) inputRef.current.value = '';
       return;
     }
@@ -31,7 +40,7 @@ export function FileDrop({ id, title, hint, icon: Icon, file, onChange, onRemove
 
       if (features.safetyGate !== 'pass') {
         const { lightLevel, clarity } = features.observedFeatures;
-        onError(`⚠️ ${title}${lightLevel}、${clarity}，建议重新拍摄以获得更稳定的分析。`);
+        onError(`${title}${lightLevel}、${clarity}，已接收，可继续生成；结果页会标记为建议复核。`);
       }
     } catch (error) {
       onError(error.message || '图片处理失败，请重试。');
@@ -79,7 +88,7 @@ export function FileDrop({ id, title, hint, icon: Icon, file, onChange, onRemove
         className="visually-hidden"
         type="file"
         accept={ACCEPTED_IMAGE_INPUT}
-        capture="environment"
+        capture={id === 'palm' ? 'environment' : 'user'}
         onChange={(event) => selectFile(event.target.files?.[0] || null)}
       />
       <div className="drop-media">

@@ -3,8 +3,8 @@ export const INFERENCE_MODE_PUBLIC = 'public-free';
 export const INFERENCE_MODE_OFFLINE_QWEN = 'offline-qwen';
 export const REQUEST_TIMEOUT_MS = 45 * 1000;
 export const CONFIG_TIMEOUT_MS = 8 * 1000;
-export const ACCEPTED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
-export const ACCEPTED_IMAGE_INPUT = 'image/jpeg,image/png,image/webp';
+export const ACCEPTED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']);
+export const ACCEPTED_IMAGE_INPUT = 'image/*';
 
 export const inferenceModeOptions = [
   {

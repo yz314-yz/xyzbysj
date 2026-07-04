@@ -47,19 +47,38 @@ function useBookDimensions() {
   return dims;
 }
 
-const BOOK_SWIPE_SKIP_SELECTOR = 'button, a, input, textarea, select, label, [role="button"], [data-no-book-swipe]';
-const IMAGE_LABELS = { tongue: '舌像', face: '面相', palm: '手相' };
+function useBookPerformanceMode() {
+  const [performanceMode, setPerformanceMode] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 768px)').matches
+      || window.matchMedia('(pointer: coarse)').matches
+      || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  });
 
-function getImageQualityError(features) {
-  const issues = Object.entries(features)
-    .filter(([, item]) => item?.safetyGate !== 'pass' || Number(item?.confidence || 0) < 0.55)
-    .map(([key, item]) => {
-      const details = Object.values(item?.observedFeatures || {}).filter(Boolean).join('、');
-      return `${IMAGE_LABELS[key] || key}${details ? `（${details}）` : ''}`;
+  useEffect(() => {
+    const queries = [
+      window.matchMedia('(max-width: 768px)'),
+      window.matchMedia('(pointer: coarse)'),
+      window.matchMedia('(prefers-reduced-motion: reduce)'),
+    ];
+    const update = () => setPerformanceMode(queries.some((query) => query.matches));
+    queries.forEach((query) => {
+      if (typeof query.addEventListener === 'function') query.addEventListener('change', update);
+      else query.addListener(update);
     });
-  if (!issues.length) return '';
-  return `图片质量不足：${issues.join('；')}。请在自然光、画面清晰、主体居中的条件下重新拍摄。`;
+    update();
+    return () => {
+      queries.forEach((query) => {
+        if (typeof query.removeEventListener === 'function') query.removeEventListener('change', update);
+        else query.removeListener(update);
+      });
+    };
+  }, []);
+
+  return performanceMode;
 }
+
+const BOOK_SWIPE_SKIP_SELECTOR = 'button, a, input, textarea, select, label, [role="button"], [data-no-book-swipe]';
 
 export function BookExperience({
   auth,
@@ -91,6 +110,7 @@ export function BookExperience({
   const [currentPage, setCurrentPage] = useState(0);
   const [showToc, setShowToc] = useState(false);
   const dims = useBookDimensions();
+  const performanceMode = useBookPerformanceMode();
 
   // ===== history state =====
   const [historyItems, setHistoryItems] = useState([]);
@@ -224,12 +244,6 @@ export function BookExperience({
   async function submit() {
     const hasInput = selected.length > 0 || Object.values(files).some(Boolean);
     if (!hasInput) { setFormError('请至少选择一个症状或上传一张图片。'); return; }
-    const qualityError = getImageQualityError(browserFeatures);
-    if (qualityError) {
-      setFormError(qualityError);
-      toast.error(qualityError);
-      return;
-    }
     if (requireModelEvidence && inferenceMode === INFERENCE_MODE_PUBLIC) {
       const message = '上线严格模式要求公网体验版加载浏览器端多模态模型。当前仅有轻量图片特征，不能生成上线级方案。';
       setFormError(message);
@@ -339,7 +353,7 @@ export function BookExperience({
 
     const deltaX = event.clientX - start.x;
     const deltaY = event.clientY - start.y;
-    const isHorizontalSwipe = Math.abs(deltaX) >= 56 && Math.abs(deltaX) > Math.abs(deltaY) * 1.35;
+    const isHorizontalSwipe = Math.abs(deltaX) >= 84 && Math.abs(deltaX) > Math.abs(deltaY) * 1.7;
     const isIntentional = Date.now() - start.time < 900;
     if (!isHorizontalSwipe || !isIntentional) return;
 
@@ -379,12 +393,12 @@ export function BookExperience({
         width={dims.width}
         height={dims.height}
         size="fixed"
-        drawShadow
-        flippingTime={450}
+        drawShadow={!performanceMode}
+        flippingTime={performanceMode ? 260 : 450}
         usePortrait
         startZIndex={0}
         autoSize
-        maxShadowOpacity={0.5}
+        maxShadowOpacity={performanceMode ? 0 : 0.5}
         useMouseEvents={false}
         swipeDistance={60}
         showPageCorners={false}
