@@ -1,5 +1,5 @@
 import HTMLFlipBook from 'react-pageflip';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Children, useEffect, useMemo, useRef, useState } from 'react';
 import {
   BookOpen, Camera, CheckCircle2, ChevronLeft, ChevronRight,
   Loader2, LockKeyhole, RotateCcw, Save, Soup, Star, Activity, Moon, Sun, List, X,
@@ -86,6 +86,63 @@ function useBookPerformanceMode() {
 }
 
 const BOOK_SWIPE_SKIP_SELECTOR = 'button, a, input, textarea, select, label, [role="button"], [data-no-book-swipe]';
+
+function BookFrame({
+  bookRef,
+  children,
+  currentPage,
+  dims,
+  mobileReader,
+  onFlip,
+  performanceMode,
+}) {
+  const pages = Children.toArray(children);
+  const safePage = Math.max(0, Math.min(currentPage, pages.length - 1));
+
+  if (mobileReader) {
+    return (
+      <div
+        className="book-mobile-reader"
+        data-testid="mobile-book-reader"
+        style={{
+          '--book-mobile-width': `${dims.width}px`,
+          '--book-mobile-height': `${dims.height}px`,
+        }}
+      >
+        <div className="book-mobile-page">
+          {pages[safePage]}
+        </div>
+        <div className="book-mobile-progress" aria-live="polite">
+          {safePage + 1} / {pages.length}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <HTMLFlipBook
+      ref={bookRef}
+      width={dims.width}
+      height={dims.height}
+      size="fixed"
+      drawShadow={!performanceMode}
+      flippingTime={performanceMode ? 260 : 450}
+      usePortrait
+      startZIndex={0}
+      autoSize
+      maxShadowOpacity={performanceMode ? 0 : 0.5}
+      useMouseEvents={false}
+      swipeDistance={60}
+      showPageCorners={false}
+      className="book-flip"
+      style={{}}
+      startPage={0}
+      onFlip={onFlip}
+    >
+      {children}
+    </HTMLFlipBook>
+  );
+}
 
 export function BookExperience({
   auth,
@@ -208,12 +265,18 @@ export function BookExperience({
       }
       const tag = e.target?.tagName || '';
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable) return;
-      if (e.key === 'ArrowLeft') bookRef.current?.pageFlip()?.flipPrev();
-      if (e.key === 'ArrowRight') bookRef.current?.pageFlip()?.flipNext();
+      if (e.key === 'ArrowLeft') {
+        if (performanceMode) setCurrentPage((page) => Math.max(0, page - 1));
+        else bookRef.current?.pageFlip()?.flipPrev();
+      }
+      if (e.key === 'ArrowRight') {
+        if (performanceMode) setCurrentPage((page) => Math.min(epiloguePage, page + 1));
+        else bookRef.current?.pageFlip()?.flipNext();
+      }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [showToc]);
+  }, [epiloguePage, performanceMode, showToc]);
 
   useEffect(() => {
     if (!showToc) return undefined;
@@ -307,7 +370,10 @@ export function BookExperience({
       setResult({ ...payload.data, savedId: payload.savedId || null });
       toast.success('方案已生成，翻页查看七日调理。');
       clearTimeout(flipTimerRef.current);
-      flipTimerRef.current = setTimeout(() => bookRef.current?.pageFlip()?.flip(4), 600);
+      flipTimerRef.current = setTimeout(() => {
+        if (performanceMode) setCurrentPage(4);
+        else bookRef.current?.pageFlip()?.flip(4);
+      }, 600);
     } catch (err) {
       const msg = err.name === 'AbortError' ? '请求超时，请稍后重试。' : err.message || '请求失败。';
       setFormError(msg); toast.error(msg);
@@ -366,9 +432,31 @@ export function BookExperience({
     }
   }
 
-  function flipNext() { bookRef.current?.pageFlip()?.flipNext(); }
-  function flipPrev() { bookRef.current?.pageFlip()?.flipPrev(); }
-  function flipTo(p) { bookRef.current?.pageFlip()?.flip(p); setShowToc(false); }
+  function clampBookPage(page) {
+    return Math.max(0, Math.min(epiloguePage, page));
+  }
+
+  function flipNext() {
+    if (performanceMode) {
+      setCurrentPage((page) => clampBookPage(page + 1));
+      return;
+    }
+    bookRef.current?.pageFlip()?.flipNext();
+  }
+
+  function flipPrev() {
+    if (performanceMode) {
+      setCurrentPage((page) => clampBookPage(page - 1));
+      return;
+    }
+    bookRef.current?.pageFlip()?.flipPrev();
+  }
+
+  function flipTo(p) {
+    if (performanceMode) setCurrentPage(clampBookPage(p));
+    else bookRef.current?.pageFlip()?.flip(p);
+    setShowToc(false);
+  }
 
   function shouldIgnoreBookSwipe(event) {
     if (!event.pointerType || (event.pointerType !== 'touch' && event.pointerType !== 'pen')) return true;
@@ -449,24 +537,13 @@ export function BookExperience({
       <InkBackground theme={theme} />
 
       {/* ===== Book ===== */}
-      <HTMLFlipBook
-        ref={bookRef}
-        width={dims.width}
-        height={dims.height}
-        size="fixed"
-        drawShadow={!performanceMode}
-        flippingTime={performanceMode ? 260 : 450}
-        usePortrait
-        startZIndex={0}
-        autoSize
-        maxShadowOpacity={performanceMode ? 0 : 0.5}
-        useMouseEvents={false}
-        swipeDistance={60}
-        showPageCorners={false}
-        className="book-flip"
-        style={{}}
-        startPage={0}
+      <BookFrame
+        bookRef={bookRef}
+        currentPage={currentPage}
+        dims={dims}
+        mobileReader={performanceMode}
         onFlip={(e) => setCurrentPage(e.data)}
+        performanceMode={performanceMode}
       >
         {/* ===== Page 0: 封面 ===== */}
         <BookPage key="cover" pageNum={0} title="" showTitle={false} showNum={false} className="is-cover">
@@ -766,7 +843,7 @@ export function BookExperience({
             <div className="bk-seal-final">岐养七日</div>
           </div>
         </BookPage>
-      </HTMLFlipBook>
+      </BookFrame>
 
       {/* ===== Navigation ===== */}
       <button className="book-nav book-nav-prev" type="button" onClick={flipPrev}

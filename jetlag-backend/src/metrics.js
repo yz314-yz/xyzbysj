@@ -27,7 +27,9 @@ function labelsFromKey(key) {
 }
 
 function getRouteLabel(req) {
-  if (!req.route) return req.path || 'unknown';
+  // SPA fallback、404、静态文件均无 req.route，统一归为 'unknown'
+  // 避免按 req.path 生成无界标签导致 Prometheus 标签基数爆炸 + 内存泄漏
+  if (!req.route) return 'unknown';
   const path = typeof req.route.path === 'string' ? req.route.path : String(req.route.path);
   if (path === '/' && req.baseUrl) return req.baseUrl;
   return `${req.baseUrl || ''}${path}`;

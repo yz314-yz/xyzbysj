@@ -90,6 +90,19 @@ describe('App', () => {
     expect(await screen.findByRole('link', { name: '返回望诊采集' })).toHaveAttribute('href', '/book');
   });
 
+  test('book route avoids the flipbook engine on mobile viewports', async () => {
+    vi.stubGlobal('matchMedia', vi.fn((query) => ({
+      matches: query.includes('max-width') || query.includes('pointer: coarse'),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })));
+
+    renderApp('/book');
+
+    expect(await screen.findByTestId('mobile-book-reader')).toBeInTheDocument();
+    expect(screen.queryByTestId('mock-flipbook')).not.toBeInTheDocument();
+  });
+
   test('book assessment requires profile fields before submitting', async () => {
     renderApp('/book');
 

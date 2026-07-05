@@ -20,6 +20,8 @@ const diagnoseSchema = z.object({
     wakeTime: z.string().optional().default(''),
   }).default({}),
   hour: z.coerce.number().int().min(0, '时辰参数需在 0-23 之间。').max(23, '时辰参数需在 0-23 之间。')
+    // 前端始终传 hour（用户本地时间），此 default 仅作向后兼容 fallback；
+    // 注意：使用服务器本地时间，部署时需保证服务器时区与用户预期一致
     .default(() => new Date().getHours()),
   inferenceMode: z.enum([INFERENCE_MODE_PUBLIC, INFERENCE_MODE_OFFLINE_QWEN]).default(INFERENCE_MODE_PUBLIC),
   browserFeatures: z.record(z.unknown()).default({}),
@@ -127,6 +129,7 @@ function parseDiagnoseBody(body) {
   };
 }
 
+// hour 默认值仅作 fallback，前端始终会传用户本地时间 hour
 function currentMeridian(hour = new Date().getHours()) {
   const index = Math.floor(((Number(hour) + 1) % 24) / 2);
   return meridianClock[index] || meridianClock[0];
@@ -174,7 +177,7 @@ function assertModelEvidence({ inferenceMode, localVision, qwenVision }) {
   if (inferenceMode === INFERENCE_MODE_OFFLINE_QWEN && !qwenVision?.parsed) {
     throw createHttpError(
       503,
-      '上线严格模式要求离线增强版必须成功调用 Qwen2.5-VL。当前本机模型不可用，不能生成上线级七日方案。'
+      '上线严格模式要求离线增强版必须成功调用 Qwen3-VL。当前本机模型不可用，不能生成上线级七日方案。'
     );
   }
 }
@@ -425,21 +428,21 @@ function buildObservationCopy(observation, qwenVision, localVision) {
   return {
     tongue: observation.tongue
       ? (tongueFeatures.length
-        ? 'Qwen2.5-VL 舌像特征：' + tongueFeatures.join('，')
+        ? 'Qwen3-VL 舌像特征：' + tongueFeatures.join('，')
         : localTongueFeatures.length
           ? '浏览器舌像特征：' + localTongueFeatures.join('，')
           : '已采集舌像：按舌色、舌苔、津液、舌下络脉归档。')
       : '未采集舌像：建议在自然光下伸舌平拍，避免美颜和强滤镜。',
     face: observation.face
       ? (faceFeatures.length
-        ? 'Qwen2.5-VL 面相特征：' + faceFeatures.join('，')
+        ? 'Qwen3-VL 面相特征：' + faceFeatures.join('，')
         : localFaceFeatures.length
           ? '浏览器面相特征：' + localFaceFeatures.join('，')
           : '已采集面相：按面色、眼神、黑眼圈、油光潮红归档。')
       : '未采集面相：建议正脸、自然光、无遮挡拍摄。',
     palm: observation.palm
       ? (palmFeatures.length
-        ? 'Qwen2.5-VL 手相特征：' + palmFeatures.join('，')
+        ? 'Qwen3-VL 手相特征：' + palmFeatures.join('，')
         : localPalmFeatures.length
           ? '浏览器手相特征：' + localPalmFeatures.join('，')
           : '已采集手相：按掌色、掌纹清晰度、温润度归档。')
@@ -457,14 +460,14 @@ function buildEngineStatus(provider, observation, qwenVision, localVision, infer
   if (!hasVisionResult) {
     if (!offlineMode) {
       fallbackReason = hasLocalVision
-        ? '公网体验版已使用浏览器本地识别特征，不调用服务端 Qwen2.5-VL。'
+        ? '公网体验版已使用浏览器本地识别特征，不调用服务端 Qwen3-VL。'
         : '公网体验版未采集图像，本次仅使用规则引擎生成养生方案。';
     } else if (!hasImage) {
       fallbackReason = '未上传图像，本次仅使用规则引擎生成养生方案。';
     } else if (!provider.enabled) {
-      fallbackReason = '本机 Qwen2.5-VL 未连接，已回退浏览器特征与规则引擎。';
+      fallbackReason = '本机 Qwen3-VL 未连接，已回退浏览器特征与规则引擎。';
     } else {
-      fallbackReason = '未获得可解析的 Qwen2.5-VL 图像特征，已回退浏览器特征与规则引擎。';
+      fallbackReason = '未获得可解析的 Qwen3-VL 图像特征，已回退浏览器特征与规则引擎。';
     }
   }
 
@@ -509,9 +512,9 @@ function buildAnalysis({ selectedSymptoms, observation, hour, profile, qwenVisio
     .map((item) => item.label);
   const provider = getVisionProviderStatus();
   const mode = hasQwenVision
-    ? 'offline-qwen25-vl-plus-rules'
+    ? 'offline-qwen3-vl-plus-rules'
     : offlineMode
-      ? (hasLocalVision ? 'offline-qwen25-vl-fallback-browser-rules' : 'offline-qwen25-vl-fallback-rules')
+      ? (hasLocalVision ? 'offline-qwen3-vl-fallback-browser-rules' : 'offline-qwen3-vl-fallback-rules')
       : hasLocalVision
         ? 'public-free-browser-rules'
         : 'public-free-rules';
@@ -560,7 +563,7 @@ function buildAnalysis({ selectedSymptoms, observation, hour, profile, qwenVisio
       modelBacked: localVision.modelBacked,
     } : null,
     qwenVision: qwenVision?.parsed ? {
-      provider: 'Qwen2.5-VL',
+      provider: 'Qwen3-VL',
       model: provider.model,
       parsed: qwenVision.parsed,
     } : null,

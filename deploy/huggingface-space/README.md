@@ -1,4 +1,4 @@
-﻿---
+---
 title: TCM Wellness Assistant
 emoji: 🌿
 colorFrom: green
@@ -19,17 +19,17 @@ Docker Space 部署文件。
 ```text
 PORT=7860
 PUBLIC_API_BASE=
-OPEN_MODEL_BASE_URL=https://你的-qwen25-vl-服务/v1
+OPEN_MODEL_BASE_URL=https://你的-qwen3-vl-服务/v1
 OPEN_MODEL_API_KEY=
-OPEN_MODEL_NAME=Qwen/Qwen2.5-VL-3B-Instruct
+OPEN_MODEL_NAME=Qwen/Qwen3-VL-32B-Instruct
 CORS_ORIGIN=
 ```
 
 说明：
 
 - `PUBLIC_API_BASE` 留空表示前端使用同源 API，适合单容器部署。
-- `OPEN_MODEL_BASE_URL` 指向外部 Qwen2.5-VL/vLLM 服务。
-- 未配置 Qwen2.5-VL 时，系统仍会使用本地规则引擎生成七日养生计划。
+- `OPEN_MODEL_BASE_URL` 指向外部 Qwen3-VL/vLLM 服务。
+- 未配置 Qwen3-VL 时，系统仍会使用本地规则引擎生成七日养生计划。
 
 
 

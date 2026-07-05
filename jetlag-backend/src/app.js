@@ -3,6 +3,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
 const fs = require('fs');
+const rateLimit = require('express-rate-limit');
 const swaggerUi = require('swagger-ui-express');
 
 const { config } = require('./config');
@@ -99,6 +100,17 @@ function createApp() {
     next(createHttpError(403, '当前页面来源未被允许访问接口。'));
   });
   app.use(morgan('combined', { stream: httpLogStream }));
+
+  // 全局 IP 维度限流：防止任意接口被滥用。健康检查、指标、SSE、Swagger 排除。
+  const globalLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    limit: Number(process.env.GLOBAL_RATE_MAX) || 120,
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => ['/health', '/metrics', '/api/v1/meridian-stream', '/api-docs', '/openapi.json'].includes(req.path),
+    message: { success: false, error: '请求过于频繁，请稍后再试。' },
+  });
+  app.use(globalLimiter);
   app.use(metricsMiddleware);
   app.use(express.json({ limit: config.jsonBodyLimit }));
   app.use(express.urlencoded({ extended: true, limit: config.jsonBodyLimit }));
@@ -109,8 +121,10 @@ function createApp() {
     );
   });
 
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-  app.get('/openapi.json', (req, res) => res.json(swaggerSpec));
+  if (process.env.NODE_ENV !== 'production') {
+    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+    app.get('/openapi.json', (req, res) => res.json(swaggerSpec));
+  }
   app.use(healthRoutes);
   app.use(metricsRoutes);
   app.use('/api/v1/auth', authRoutes);

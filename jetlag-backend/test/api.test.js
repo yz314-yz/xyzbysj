@@ -17,6 +17,15 @@ const { logger } = require('../src/logger');
 const { closeDatabase, ensureDatabase } = require('../src/models/database');
 const { assertProductionJwtSecret } = require('../src/server');
 
+// server.js 顶部 require('dotenv').config() 会把 .env 注入 process.env，
+// 但本测试套件的设计前提是「未配置任何云模型」（见用例名 "when text model is
+// not configured"、"runs public experience mode ... without Qwen"）。
+// 这里清除 OPEN_MODEL_* 以恢复测试隔离，避免误调真实云 API 导致超时。
+['OPEN_MODEL_BASE_URL', 'OPEN_MODEL_API_KEY', 'OPEN_MODEL_NAME',
+ 'OPEN_TEXT_MODEL_NAME', 'OPEN_MODEL_TIMEOUT_MS'].forEach((key) => {
+  delete process.env[key];
+});
+
 const tinyPng = Buffer.from(
   '89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000a49444154789c6360000002000100ffff03000006000557bfab3d0000000049454e44ae426082',
   'hex'

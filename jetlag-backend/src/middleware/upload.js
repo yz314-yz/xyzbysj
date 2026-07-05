@@ -49,35 +49,36 @@ const upload = multer({
   },
 });
 
-function cleanupFiles(files) {
-  Object.values(files || {}).flat().forEach((file) => {
+async function cleanupFiles(files) {
+  const allFiles = Object.values(files || {}).flat();
+  for (const file of allFiles) {
     try {
-      fs.unlinkSync(file.path);
+      await fs.promises.unlink(file.path);
     } catch (error) {
       logger.warn('临时上传文件清理失败：' + error.message);
     }
-  });
+  }
 }
 
-function validateUploadedImages(req, res, next) {
+async function validateUploadedImages(req, res, next) {
   const files = Object.values(req.files || {}).flat();
   try {
-    files.forEach((file) => {
-      const fd = fs.openSync(file.path, 'r');
+    for (const file of files) {
+      const fd = await fs.promises.open(file.path, 'r');
       try {
         const buffer = Buffer.alloc(SIGNATURE_READ_BYTES);
-        const bytesRead = fs.readSync(fd, buffer, 0, SIGNATURE_READ_BYTES, 0);
+        const { bytesRead } = await fd.read(buffer, 0, SIGNATURE_READ_BYTES, 0);
         const detectedType = detectImageType(buffer.subarray(0, bytesRead));
         if (!detectedType || detectedType !== file.mimetype) {
           throw createHttpError(415, '图片文件内容与类型不匹配，请上传真实 JPG、PNG 或 WEBP 图片。');
         }
       } finally {
-        fs.closeSync(fd);
+        await fd.close();
       }
-    });
+    }
     next();
   } catch (error) {
-    cleanupFiles(req.files);
+    cleanupFiles(req.files).catch(() => {});
     next(error);
   }
 }

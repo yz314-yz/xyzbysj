@@ -38,7 +38,9 @@ const config = {
   dataDir: process.env.DATA_DIR || path.join(rootDir, 'data'),
   logsDir: process.env.LOG_DIR || path.join(rootDir, 'logs'),
   databasePath: process.env.DATABASE_PATH || path.join(rootDir, 'data', 'tcm-wellness.sqlite'),
-  jwtSecret: process.env.JWT_SECRET || 'dev-only-change-me',
+  jwtSecret: process.env.JWT_SECRET || (process.env.NODE_ENV === 'production'
+    ? null
+    : require('crypto').randomBytes(32).toString('hex')),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   publicApiBase: process.env.PUBLIC_API_BASE || '',
   allowedOrigins,

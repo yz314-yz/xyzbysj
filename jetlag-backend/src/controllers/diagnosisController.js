@@ -13,7 +13,7 @@ async function diagnose(req, res, next) {
   } catch (error) {
     next(error);
   } finally {
-    cleanupFiles(req.files);
+    cleanupFiles(req.files).catch(() => {});
   }
 }
 

@@ -56,6 +56,9 @@ function ensureDatabase() {
     );
   `);
 
+  database.exec(`CREATE INDEX IF NOT EXISTS idx_diagnoses_user_id ON diagnoses(user_id);`);
+  database.exec(`CREATE INDEX IF NOT EXISTS idx_checkins_diagnosis_id ON checkins(diagnosis_id);`);
+
   logger.info('SQLite 数据库已就绪：' + config.databasePath);
   return database;
 }

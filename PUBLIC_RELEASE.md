@@ -1,4 +1,4 @@
-﻿# 正式公网发布路线：GitHub -> GHCR -> Hugging Face Docker Space
+# 正式公网发布路线：GitHub -> GHCR -> Hugging Face Docker Space
 
 本文件说明当前作品的正式公网发布方案，适用于毕业设计答辩和 Trae Solo 创作者比赛提交。
 
@@ -7,7 +7,7 @@
 - 项目类型：前后端分离项目，已适配为 Hugging Face 单容器运行。
 - 前端：React + Vite，目录 `jetlag-frontend/`，构建命令 `npm run build`。
 - 后端：Express，目录 `jetlag-backend/`，启动命令 `npm start`。
-- 模型：Qwen2.5-VL 外部服务，通过 OpenAI 兼容接口接入。
+- 模型：Qwen3-VL 外部服务，通过 OpenAI 兼容接口接入。
 - 容器端口：`7860`，适配 Hugging Face Docker Space。
 
 ## 使用的参考模板
@@ -22,7 +22,7 @@
 - 不是直接发布前端或后端，而是使用根目录 `Dockerfile` 构建完整应用镜像。
 - 前端 `dist` 会复制到后端 `public` 目录，由 Express 同时提供页面和 API。
 - 前端运行时 `/env.js` 支持同源 API，Hugging Face 上 `PUBLIC_API_BASE` 可留空。
-- 后端通过 `OPEN_MODEL_BASE_URL`、`OPEN_MODEL_API_KEY`、`OPEN_MODEL_NAME` 接入 Qwen2.5-VL。
+- 后端通过 `OPEN_MODEL_BASE_URL`、`OPEN_MODEL_API_KEY`、`OPEN_MODEL_NAME` 接入 Qwen3-VL。
 - GitHub Actions 输出镜像：`ghcr.io/<github-user>/<repo>:latest`。
 
 ## 第一步：推送到 GitHub
@@ -89,16 +89,16 @@ FROM ghcr.io/<github-user>/<repo>:latest
 ```text
 PORT=7860
 PUBLIC_API_BASE=
-OPEN_MODEL_BASE_URL=https://你的-qwen25-vl-服务/v1
+OPEN_MODEL_BASE_URL=https://你的-qwen3-vl-服务/v1
 OPEN_MODEL_API_KEY=
-OPEN_MODEL_NAME=Qwen/Qwen2.5-VL-3B-Instruct
+OPEN_MODEL_NAME=Qwen/Qwen3-VL-32B-Instruct
 CORS_ORIGIN=
 ```
 
 说明：
 
 - `PUBLIC_API_BASE` 留空：前端请求同源后端。
-- `OPEN_MODEL_BASE_URL`：指向外部 Qwen2.5-VL/vLLM 服务。
+- `OPEN_MODEL_BASE_URL`：指向外部 Qwen3-VL/vLLM 服务。
 - 如果暂时没有 GPU 模型服务，后端仍会用本地规则生成七日计划。
 
 ## 第五步：验证
@@ -116,11 +116,11 @@ CORS_ORIGIN=
   "status": "ok",
   "service": "中医养生辅助系统",
   "visionModelReady": true,
-  "visionModelName": "Qwen/Qwen2.5-VL-3B-Instruct"
+  "visionModelName": "Qwen/Qwen3-VL-32B-Instruct"
 }
 ```
 
-如果 `visionModelReady` 是 `false`，说明 Qwen2.5-VL 地址还没有配置，但基础演示仍可运行。
+如果 `visionModelReady` 是 `false`，说明 Qwen3-VL 地址还没有配置，但基础演示仍可运行。
 
 
 

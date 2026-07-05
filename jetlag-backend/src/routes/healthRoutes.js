@@ -8,7 +8,7 @@ const router = express.Router();
  * @openapi
  * /health:
  *   get:
- *     summary: 健康检查与 Qwen2.5-VL 上游探测
+ *     summary: 健康检查与 Qwen3-VL 上游探测
  *     tags: [Health]
  */
 router.get('/health', health);

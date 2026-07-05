@@ -5,12 +5,24 @@ const { logger } = require('../logger');
 
 let scheduled = false;
 const clients = new Set();
+const MAX_SSE_CLIENTS = Number(process.env.SSE_MAX_CLIENTS) || 100;
 
 /**
  * 注册一个 SSE 客户端响应对象，返回取消注册函数。
  * cron 每小时触发时会向所有已注册客户端推送时辰养生提醒。
+ * 超过 MAX_SSE_CLIENTS 时拒绝新连接（返回 null），防止资源耗尽。
  */
 function registerSSEClient(res) {
+  if (clients.size >= MAX_SSE_CLIENTS) {
+    try {
+      res.writeHead(503, { 'Content-Type': 'text/event-stream' });
+      res.write('event: error\ndata: {"type":"server-busy"}\n\n');
+      res.end();
+    } catch {
+      // 客户端可能已断开，忽略
+    }
+    return null;
+  }
   clients.add(res);
   res.on('close', () => clients.delete(res));
   return () => clients.delete(res);

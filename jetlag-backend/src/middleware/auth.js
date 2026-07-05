@@ -15,7 +15,8 @@ function readUserFromToken(req) {
   if (!token) return null;
 
   try {
-    const payload = jwt.verify(token, config.jwtSecret);
+    // 锁定 HS256，防止 alg=none 或非对称算法混淆攻击
+    const payload = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] });
     const user = findUserById(payload.sub);
     return user || null;
   } catch {

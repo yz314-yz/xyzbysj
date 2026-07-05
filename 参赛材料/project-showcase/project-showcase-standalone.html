@@ -406,7 +406,7 @@
     <h2>项目简介</h2>
     <p class="section-desc">让中医养生知识从古籍走向日常生活</p>
     <p class="intro-text">
-      岐养七日是一个面向大众的中医养生辅助系统。用户上传舌像、面相、手相图片并选择症状后，系统通过<mark>本地规则引擎</mark>和可选的 <mark>Qwen2.5-VL 图像分析</mark>，生成体质方向判断、当下时辰的子午流注养生建议，以及一份覆盖饮食、运动、作息的七日调理计划。系统支持用户注册登录、历史记录查看和 PDF 报告导出，后端具备完整的 Docker 部署、CI/CD 流水线、Prometheus 监控和 Loki 日志采集。
+      岐养七日是一个面向大众的中医养生辅助系统。用户上传舌像、面相、手相图片并选择症状后，系统通过<mark>本地规则引擎</mark>和可选的 <mark>Qwen3-VL 图像分析</mark>，生成体质方向判断、当下时辰的子午流注养生建议，以及一份覆盖饮食、运动、作息的七日调理计划。系统支持用户注册登录、历史记录查看和 PDF 报告导出，后端具备完整的 Docker 部署、CI/CD 流水线、Prometheus 监控和 Loki 日志采集。
     </p>
     <div class="stat-row">
       <div class="stat-item">
@@ -444,7 +444,7 @@
       <div class="feature-card">
         <div class="icon">🔍</div>
         <h3>智能分析</h3>
-        <p>本地规则引擎根据症状计算体质方向，可选接入 Qwen2.5-VL 提取望诊图片特征，双引擎协同输出可解释结果。</p>
+        <p>本地规则引擎根据症状计算体质方向，可选接入 Qwen3-VL 提取望诊图片特征，双引擎协同输出可解释结果。</p>
       </div>
       <div class="feature-card">
         <div class="icon">⚖️</div>
@@ -516,9 +516,9 @@
   <rect x="100" y="240" width="200" height="40" rx="8" fill="#ede8df" stroke="#8b5e3c" stroke-width="2"/>
   <text x="200" y="265" text-anchor="middle" font-size="12" fill="#2d2a26">本地中医规则库</text>
   
-  <!-- Qwen2.5-VL -->
+  <!-- Qwen3-VL -->
   <rect x="400" y="240" width="200" height="40" rx="8" fill="#ede8df" stroke="#8b5e3c" stroke-width="2"/>
-  <text x="500" y="265" text-anchor="middle" font-size="12" fill="#2d2a26">Qwen2.5-VL 图像分析</text>
+  <text x="500" y="265" text-anchor="middle" font-size="12" fill="#2d2a26">Qwen3-VL 图像分析</text>
   
   <!-- Bottom row -->
   <line x1="350" y1="120" x2="120" y2="320" stroke="#7a716a" stroke-width="1" stroke-dasharray="4"/>
@@ -542,7 +542,7 @@
 </svg>
 </div>
 
-      <figcaption>系统总体架构：前端 React 应用通过 Express API 访问后端服务，规则引擎与 Qwen2.5-VL 协同分析，SQLite 持久化数据，Prometheus 与 Loki 提供监控和日志采集</figcaption>
+      <figcaption>系统总体架构：前端 React 应用通过 Express API 访问后端服务，规则引擎与 Qwen3-VL 协同分析，SQLite 持久化数据，Prometheus 与 Loki 提供监控和日志采集</figcaption>
     </figure>
 
     <div class="table-wrap">
@@ -557,7 +557,7 @@
         <tbody>
           <tr><td>前端</td><td>React · Vite · React Router · react-hot-toast · html2canvas · jsPDF</td><td>页面渲染、路由、通知、截图与 PDF 导出</td></tr>
           <tr><td>后端</td><td>Node.js · Express · SQLite · JWT · Zod · Multer · Helmet · Morgan · Winston</td><td>API 服务、数据持久化、鉴权、校验、安全、日志</td></tr>
-          <tr><td>AI 接入</td><td>OpenAI 兼容接口 · Qwen2.5-VL</td><td>望诊图片特征提取，辅助体质判断</td></tr>
+          <tr><td>AI 接入</td><td>OpenAI 兼容接口 · Qwen3-VL</td><td>望诊图片特征提取，辅助体质判断</td></tr>
           <tr><td>测试</td><td>Jest + Supertest · Vitest + Testing Library</td><td>后端接口测试、前端组件测试</td></tr>
           <tr><td>部署</td><td>Docker · Nginx · GitHub Actions · GHCR</td><td>容器化部署、反向代理、CI/CD 自动构建推送</td></tr>
           <tr><td>监控</td><td>Prometheus · Grafana · Loki · Promtail</td><td>指标采集、可视化、日志收集</td></tr>
@@ -588,7 +588,7 @@
   <text x="400" y="30" text-anchor="middle" font-size="12" fill="#2d2a26" font-weight="bold">Express 后端</text>
   
   <rect x="500" y="10" width="120" height="30" rx="6" fill="#ede8df" stroke="#8b5e3c" stroke-width="2"/>
-  <text x="560" y="30" text-anchor="middle" font-size="12" fill="#2d2a26" font-weight="bold">Qwen2.5-VL</text>
+  <text x="560" y="30" text-anchor="middle" font-size="12" fill="#2d2a26" font-weight="bold">Qwen3-VL</text>
   
   <rect x="620" y="10" width="60" height="30" rx="6" fill="#ede8df" stroke="#4a7c59" stroke-width="2"/>
   <text x="650" y="30" text-anchor="middle" font-size="11" fill="#2d2a26">SQLite</text>
@@ -639,7 +639,7 @@
 </svg>
 </div>
 
-      <figcaption>诊断时序：用户提交症状与图片后，后端先做本地规则分析，再按需调用 Qwen2.5-VL 提取图像特征，最终合并生成体质方向与七日计划，登录用户的结果持久化到 SQLite</figcaption>
+      <figcaption>诊断时序：用户提交症状与图片后，后端先做本地规则分析，再按需调用 Qwen3-VL 提取图像特征，最终合并生成体质方向与七日计划，登录用户的结果持久化到 SQLite</figcaption>
     </figure>
   </div>
 </section>
