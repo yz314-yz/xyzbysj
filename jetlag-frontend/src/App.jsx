@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
 import { useAuth } from './hooks/useAuth';
+import { safeStorage } from './utils/safeStorage';
 import { useMeridianStream } from './hooks/useMeridianStream';
 import { useRuntimeData } from './hooks/useRuntimeData';
 
@@ -35,11 +36,11 @@ function BookRoute({ auth, theme, onThemeToggle }) {
 export function App() {
   const auth = useAuth();
   const location = useLocation();
-  const [theme, setTheme] = useState(() => localStorage.getItem('tcm-theme') || 'light');
+  const [theme, setTheme] = useState(() => safeStorage.getItem('tcm-theme') || 'light');
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    localStorage.setItem('tcm-theme', theme);
+    safeStorage.setItem('tcm-theme', theme);
   }, [theme]);
 
   function toggleTheme() {

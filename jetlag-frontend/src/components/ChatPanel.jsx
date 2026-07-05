@@ -9,7 +9,11 @@ export function ChatPanel({ result, token }) {
   const [question, setQuestion] = useState('');
   const [loading, setLoading] = useState(false);
   const threadRef = useRef(null);
+  const abortRef = useRef(null);
   const hasResult = useMemo(() => result.sevenDayPlan?.length > 0, [result.sevenDayPlan?.length]);
+
+  // 卸载时取消进行中的请求
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   useEffect(() => {
     const thread = threadRef.current;
@@ -35,12 +39,17 @@ export function ChatPanel({ result, token }) {
     setQuestion('');
     setLoading(true);
 
+    // 取消上一次未完成的请求
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
       const payload = await sendChatMessage({
         question: content,
         result,
         messages: messages.slice(-6),
-      }, token);
+      }, token, controller.signal);
       const assistantMessage = {
         role: 'assistant',
         content: payload.data.reply,
@@ -49,6 +58,7 @@ export function ChatPanel({ result, token }) {
       setMessages((current) => [...current, assistantMessage]);
       if (assistantMessage.offline) toast('当前为离线演示模式，AI 对话暂不可用。');
     } catch (error) {
+      if (error.name === 'AbortError') return; // 卸载或被新请求取代，静默忽略
       const assistantMessage = {
         role: 'assistant',
         content: error.message || 'AI 对话暂不可用，请稍后再试。',
@@ -57,6 +67,7 @@ export function ChatPanel({ result, token }) {
       setMessages((current) => [...current, assistantMessage]);
       toast.error(assistantMessage.content);
     } finally {
+      if (abortRef.current === controller) abortRef.current = null;
       setLoading(false);
     }
   }

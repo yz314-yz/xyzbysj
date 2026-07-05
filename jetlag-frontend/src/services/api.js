@@ -1,4 +1,4 @@
-import { CONFIG_TIMEOUT_MS, REQUEST_TIMEOUT_MS } from '../constants/app';
+import { CONFIG_TIMEOUT_MS, DIAGNOSE_TIMEOUT_MS, REQUEST_TIMEOUT_MS } from '../constants/app';
 
 const runtimeConfig = window.__APP_CONFIG__ || {};
 const runtimeApiBase = typeof runtimeConfig.API_BASE === 'string' ? runtimeConfig.API_BASE.trim() : '';
@@ -7,9 +7,16 @@ export const API_BASE =
   runtimeApiBase || import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:3000' : '');
 
 export async function fetchJson(path, options = {}) {
-  const { timeout = REQUEST_TIMEOUT_MS, token, headers, ...fetchOptions } = options;
+  const { timeout = REQUEST_TIMEOUT_MS, token, headers, signal, ...fetchOptions } = options;
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), timeout);
+
+  // 外部 signal（如组件卸载触发的 abort）联动到内部 controller
+  const onExternalAbort = () => controller.abort();
+  if (signal) {
+    if (signal.aborted) controller.abort();
+    else signal.addEventListener('abort', onExternalAbort, { once: true });
+  }
 
   try {
     const response = await fetch(`${API_BASE}${path}`, {
@@ -30,6 +37,7 @@ export async function fetchJson(path, options = {}) {
     return payload;
   } finally {
     window.clearTimeout(timer);
+    if (signal) signal.removeEventListener('abort', onExternalAbort);
   }
 }
 
@@ -87,16 +95,17 @@ export function submitDiagnosis(form, token) {
     method: 'POST',
     body: form,
     token,
-    timeout: REQUEST_TIMEOUT_MS,
+    timeout: DIAGNOSE_TIMEOUT_MS,
   });
 }
 
-export function sendChatMessage({ question, result, messages }, token) {
+export function sendChatMessage({ question, result, messages }, token, signal) {
   return fetchJson('/api/v1/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ question, result, messages }),
     token,
     timeout: REQUEST_TIMEOUT_MS,
+    signal,
   });
 }

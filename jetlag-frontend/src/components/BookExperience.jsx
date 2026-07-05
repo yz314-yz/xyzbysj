@@ -1,5 +1,5 @@
 import HTMLFlipBook from 'react-pageflip';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   BookOpen, Camera, CheckCircle2, ChevronLeft, ChevronRight,
   Loader2, LockKeyhole, RotateCcw, Save, Soup, Star, Activity, Moon, Sun, List, X,
@@ -16,6 +16,7 @@ import { InferenceModeSelector } from './InferenceModeSelector';
 import { ChatPanel } from './ChatPanel';
 import { ShareCard } from './ShareCard';
 import { ExportButton } from './ExportButton';
+import { AuthPanel } from './AuthPanel';
 import { InkBackground } from './InkBackground';
 import {
   INFERENCE_MODE_OFFLINE_QWEN, INFERENCE_MODE_PUBLIC,
@@ -113,6 +114,7 @@ export function BookExperience({
   const tocPanelRef = useRef(null);
   const previousFocusRef = useRef(null);
   const swipeStartRef = useRef(null);
+  const flipTimerRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [showToc, setShowToc] = useState(false);
   const dims = useBookDimensions();
@@ -120,6 +122,7 @@ export function BookExperience({
 
   // ===== history state =====
   const [historyItems, setHistoryItems] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [expandedHistoryId, setExpandedHistoryId] = useState(null);
   const [historyDetail, setHistoryDetail] = useState({});
 
@@ -131,7 +134,7 @@ export function BookExperience({
   const meridianHint = useMeridianHint();
   const hasResult = result.sevenDayPlan && result.sevenDayPlan.length > 0;
   const planPageCount = hasResult ? result.sevenDayPlan.length : 7;
-  const meridianPage = 4 + planPageCount;
+  const meridianPage = 5 + planPageCount;
   const historyPage = meridianPage + 1;
   const epiloguePage = historyPage + 1;
   const symptoms = symptomOptions?.length ? symptomOptions : fallbackSymptomOptions;
@@ -139,16 +142,28 @@ export function BookExperience({
   // ===== load history on auth change =====
   useEffect(() => {
     if (!auth.token) return;
-    loadHistory(auth.token)
-      .then((p) => setHistoryItems(p.data || []))
-      .catch(() => {});
+    let cancelled = false;
+    (async () => {
+      try {
+        setHistoryLoading(true);
+        const p = await loadHistory(auth.token);
+        if (!cancelled) setHistoryItems(p.data || []);
+      } catch {
+        if (!cancelled) toast.error('历史记录加载失败');
+      } finally {
+        if (!cancelled) setHistoryLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [auth.token]);
 
   // ===== load checkins once when a saved diagnosis exists =====
   useEffect(() => {
     if (!auth.token || !result.savedId) return;
+    let cancelled = false;
     loadCheckins(auth.token, result.savedId)
       .then((p) => {
+        if (cancelled) return;
         const items = p.data?.items || [];
         setCheckins(items);
         const drafts = {};
@@ -164,7 +179,22 @@ export function BookExperience({
         setCheckinDrafts(drafts);
       })
       .catch(() => {});
+    return () => { cancelled = true; };
   }, [auth.token, result.savedId]);
+
+  // VisionPanel 接收的合成 result：用 useMemo 缓存，避免每次翻页都生成新对象触发子组件重渲染
+  const visionPanelResult = useMemo(() => ({
+    ...result,
+    engineStatus: {
+      ...result.engineStatus,
+      vision: {
+        ...result.engineStatus.vision,
+        configured: offlineVisionAvailable || visionConfigured || result.engineStatus.vision.configured,
+        model: modelName || result.engineStatus.vision.model,
+        requested: inferenceMode === INFERENCE_MODE_OFFLINE_QWEN || result.engineStatus.vision.requested,
+      },
+    },
+  }), [result, offlineVisionAvailable, visionConfigured, modelName, inferenceMode]);
 
   // ===== keyboard navigation =====
   useEffect(() => {
@@ -197,6 +227,9 @@ export function BookExperience({
     };
   }, [showToc]);
 
+  // 卸载时清理翻页定时器，避免组件卸载后调用 pageFlip
+  useEffect(() => () => clearTimeout(flipTimerRef.current), []);
+
   // ===== diagnosis actions =====
   function toggleSymptom(id) {
     setFormError('');
@@ -204,7 +237,7 @@ export function BookExperience({
   }
   function updateInferenceMode(nextMode) {
     if (nextMode === INFERENCE_MODE_OFFLINE_QWEN && !offlineVisionAvailable) {
-      toast.error('离线增强模式需要先连接本机 Qwen2.5-VL 服务。');
+      toast.error('离线增强模式需要先连接本机 Qwen3-VL 服务。');
       return;
     }
     setInferenceMode(nextMode);
@@ -273,7 +306,8 @@ export function BookExperience({
       const payload = await submitDiagnosis(form, auth.token);
       setResult({ ...payload.data, savedId: payload.savedId || null });
       toast.success('方案已生成，翻页查看七日调理。');
-      setTimeout(() => bookRef.current?.pageFlip()?.flip(3), 600);
+      clearTimeout(flipTimerRef.current);
+      flipTimerRef.current = setTimeout(() => bookRef.current?.pageFlip()?.flip(4), 600);
     } catch (err) {
       const msg = err.name === 'AbortError' ? '请求超时，请稍后重试。' : err.message || '请求失败。';
       setFormError(msg); toast.error(msg);
@@ -384,17 +418,20 @@ export function BookExperience({
       const targetRect = target.getBoundingClientRect();
       const targetTop = targetRect.top - bodyRect.top + pageBody.scrollTop;
       pageBody.scrollTop = Math.max(0, targetTop - bodyRect.height * 0.35);
-      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      if (window.innerWidth >= 768) {
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      }
     });
   }
 
-  // 实际翻页索引：0=封面, 1=序, 2=问诊, 3=辨识, 4 起为调理页，后续页随计划长度动态后移。
+  // 实际翻页索引：0=封面, 1=序, 2=登录, 3=问诊, 4=辨识, 5 起为调理页，后续页随计划长度动态后移。
   const tocItems = [
     { page: 0, title: '封面' },
     { page: 1, title: '序言' },
-    { page: 2, title: '问诊' },
-    { page: 3, title: '辨识结果' },
-    { page: 4, title: '七日调理' },
+    { page: 2, title: '登录' },
+    { page: 3, title: '问诊' },
+    { page: 4, title: '辨识结果' },
+    { page: 5, title: '七日调理' },
     { page: meridianPage, title: '时辰养生' },
     { page: historyPage, title: '诊史' },
     { page: epiloguePage, title: '跋' },
@@ -473,8 +510,17 @@ export function BookExperience({
           </div>
         </BookPage>
 
-        {/* ===== Page 2: 问诊 ===== */}
-        <BookPage key="assessment" pageNum={2} title="问诊">
+        {/* ===== Page 2: 登录 ===== */}
+        <BookPage key="login" pageNum={2} title="登录">
+          <div className="bk-login">
+            <p className="bk-login-desc">登录后可保存诊断历史与七日调理打卡记录。</p>
+            <AuthPanel auth={auth} />
+            <p className="bk-hint">→ 登录或跳过，翻页继续问诊</p>
+          </div>
+        </BookPage>
+
+        {/* ===== Page 3: 问诊 ===== */}
+        <BookPage key="assessment" pageNum={3} title="问诊">
           <div className="bk-assessment">
             <div className="bk-section-label">症状勾选</div>
             <div className="bk-symptoms">
@@ -524,24 +570,13 @@ export function BookExperience({
           </div>
         </BookPage>
 
-        {/* ===== Page 3: 辨识结果 ===== */}
-        <BookPage key="result" pageNum={3} title="辨识">
+        {/* ===== Page 4: 辨识结果 ===== */}
+        <BookPage key="result" pageNum={4} title="辨识">
           <div className="bk-result">
             {hasResult ? (
               <>
                 <ResultCard result={result} />
-                <VisionPanel result={{
-                  ...result,
-                  engineStatus: {
-                    ...result.engineStatus,
-                    vision: {
-                      ...result.engineStatus.vision,
-                      configured: offlineVisionAvailable || visionConfigured || result.engineStatus.vision.configured,
-                      model: modelName || result.engineStatus.vision.model,
-                      requested: inferenceMode === INFERENCE_MODE_OFFLINE_QWEN || result.engineStatus.vision.requested,
-                    },
-                  },
-                }} />
+                <VisionPanel result={visionPanelResult} />
                 <div className="bk-result-actions">
                   <ExportButton disabled={!result.sevenDayPlan.length} />
                   <ShareCard result={result} />
@@ -558,9 +593,9 @@ export function BookExperience({
           </div>
         </BookPage>
 
-        {/* ===== Pages 4-10: 七日调理 (每天一页) ===== */}
+        {/* ===== Pages 5-11: 七日调理 (每天一页) ===== */}
         {result.sevenDayPlan.map((day, i) => (
-          <BookPage key={`day-${i}`} pageNum={4 + i} title={day.day}>
+          <BookPage key={`day-${i}`} pageNum={5 + i} title={day.day}>
             <div className="bk-day">
               <h3 className="bk-day-theme">{day.theme}</h3>
               <div className="bk-day-section">
@@ -639,7 +674,7 @@ export function BookExperience({
         ))}
         {/* placeholder pages if no plan */}
         {!hasResult && Array.from({ length: 7 }).map((_, i) => (
-          <BookPage key={`day-empty-${i}`} pageNum={4 + i} title={`第${'一二三四五六七'[i]}日`}>
+          <BookPage key={`day-empty-${i}`} pageNum={5 + i} title={`第${'一二三四五六七'[i]}日`}>
             <div className="bk-placeholder">
               <BookOpen size={28} />
               <p>完成问诊后，此处将显示第{i + 1}日的调理方案。</p>
@@ -677,6 +712,12 @@ export function BookExperience({
                 <LockKeyhole size={28} />
                 <p>登录后可查看历史诊断记录。</p>
                 <Link className="bk-login-link" to="/login">去登录</Link>
+              </div>
+            ) : historyLoading ? (
+              <div className="bk-history-list">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="bk-history-card is-loading" />
+                ))}
               </div>
             ) : historyItems.length === 0 ? (
               <div className="bk-placeholder">

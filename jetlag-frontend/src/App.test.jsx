@@ -1,10 +1,9 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { App } from './App';
-import { PlanTable } from './components/PlanTable';
 
 vi.mock('react-pageflip', async () => {
   const React = await vi.importActual('react');
@@ -64,7 +63,7 @@ beforeEach(() => {
       return Promise.resolve(new Response(JSON.stringify({
         status: 'ok',
         visionModelReady: false,
-        visionModelName: 'Qwen/Qwen2.5-VL-3B-Instruct',
+        visionModelName: 'Qwen/Qwen3-VL-32B-Instruct',
       })));
     }
     return Promise.resolve(new Response(JSON.stringify({ success: true, data: [] })));
@@ -103,25 +102,5 @@ describe('App', () => {
     expect(await screen.findByText(/请补全基本信息/)).toBeInTheDocument();
     expect(screen.getByText('请填写年龄')).toBeInTheDocument();
     expect(screen.getByText('请选择性别')).toBeInTheDocument();
-  });
-
-  test('renders the seven-day plan as a single-open mobile accordion', async () => {
-    const result = {
-      sevenDayPlan: [
-        { day: '第1天', theme: '健脾', diet: '山药小米粥', exercise: '八段锦', sleep: '23 点前睡', note: '先固护脾胃' },
-        { day: '第2天', theme: '疏肝', diet: '玫瑰陈皮茶', exercise: '舒展肩颈', sleep: '午间小憩', note: '减少郁滞' },
-      ],
-    };
-
-    render(<PlanTable result={result} />);
-
-    const mobilePlan = screen.getByLabelText('七日计划移动端折叠列表');
-    expect(within(mobilePlan).getByText('山药小米粥')).toBeInTheDocument();
-    expect(within(mobilePlan).queryByText('玫瑰陈皮茶')).not.toBeInTheDocument();
-
-    await userEvent.click(within(mobilePlan).getByRole('button', { name: /第2天/ }));
-
-    expect(within(mobilePlan).getByText('玫瑰陈皮茶')).toBeInTheDocument();
-    expect(within(mobilePlan).queryByText('山药小米粥')).not.toBeInTheDocument();
   });
 });

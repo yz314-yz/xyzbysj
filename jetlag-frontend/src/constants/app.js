@@ -1,7 +1,8 @@
-﻿export const DEFAULT_MODEL_NAME = 'Qwen/Qwen2.5-VL-3B-Instruct';
+export const DEFAULT_MODEL_NAME = 'Qwen/Qwen3-VL-32B-Instruct';
 export const INFERENCE_MODE_PUBLIC = 'public-free';
 export const INFERENCE_MODE_OFFLINE_QWEN = 'offline-qwen';
 export const REQUEST_TIMEOUT_MS = 45 * 1000;
+export const DIAGNOSE_TIMEOUT_MS = 130 * 1000;
 export const CONFIG_TIMEOUT_MS = 8 * 1000;
 export const ACCEPTED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']);
 export const ACCEPTED_IMAGE_INPUT = 'image/*';
@@ -18,8 +19,8 @@ export const inferenceModeOptions = [
     id: INFERENCE_MODE_OFFLINE_QWEN,
     label: '离线增强',
     title: '离线增强演示版',
-    shortLabel: '本机 Qwen2.5-VL',
-    description: '仅在答辩电脑或已安装完整模型的电脑上调用本地 Qwen2.5-VL。',
+    shortLabel: '本机 Qwen3-VL',
+    description: '仅在答辩电脑或已安装完整模型的电脑上调用本地 Qwen3-VL。',
   },
 ];
 
@@ -66,7 +67,7 @@ export function createEmptyResult(modelName = DEFAULT_MODEL_NAME, inferenceMode 
   const offlineMode = inferenceMode === INFERENCE_MODE_OFFLINE_QWEN;
   return {
     inferenceMode,
-    mode: offlineMode ? 'offline-qwen25-vl-standby' : 'public-free-browser-rules',
+    mode: offlineMode ? 'offline-qwen3-vl-standby' : 'public-free-browser-rules',
     engineStatus: {
       rules: {
         enabled: true,
@@ -83,15 +84,15 @@ export function createEmptyResult(modelName = DEFAULT_MODEL_NAME, inferenceMode 
         role: '在访客浏览器内提取亮度、清晰度、颜色倾向等可观察特征。',
       },
       vision: {
-        provider: 'Qwen2.5-VL',
+        provider: 'Qwen3-VL',
         model: modelName,
         configured: false,
         active: false,
         requested: offlineMode,
         baseURL: '',
         fallbackReason: offlineMode
-          ? '离线增强模式需连接本机 Qwen2.5-VL 服务。'
-          : '公网体验版不调用服务端 Qwen2.5-VL。',
+          ? '离线增强模式需连接本机 Qwen3-VL 服务。'
+          : '公网体验版不调用服务端 Qwen3-VL。',
       },
     },
     disclaimer: '⚠️ AI 分析仅供学术参考，不作为医疗诊断。请咨询执业中医师。',

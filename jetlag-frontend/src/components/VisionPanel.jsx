@@ -28,8 +28,8 @@ export function VisionPanel({ result }) {
   const activeClass = parsed ? 'is-model' : hasLocalVision ? 'is-browser' : 'is-rules';
   const neutralFallback = result.inferenceMode === 'offline-qwen'
     ? (modelConfigured
-      ? '离线增强模式已连接本机 Qwen2.5-VL；上传图像后会参与特征分析。'
-      : '离线增强模式未连接本机 Qwen2.5-VL，已回退规则引擎。')
+      ? '离线增强模式已连接本机 Qwen3-VL；上传图像后会参与特征分析。'
+      : '离线增强模式未连接本机 Qwen3-VL，已回退规则引擎。')
     : '公网体验版使用浏览器本地特征与规则引擎，不上传原始图片。';
   const statusText = parsed
     ? result.qwenVision.model
@@ -41,7 +41,7 @@ export function VisionPanel({ result }) {
   const statusDetail =
     result.modelVisionError ||
     (parsed
-      ? 'Qwen2.5-VL 已返回图像特征，规则引擎已参与方案生成。'
+      ? 'Qwen3-VL 已返回图像特征，规则引擎已参与方案生成。'
       : hasLocalVision
         ? (modelBackedLocal
           ? '浏览器端多模态模型已完成特征提取，规则引擎已据此生成七日建议。'

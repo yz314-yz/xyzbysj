@@ -2403,6 +2403,10 @@ to {
   background:transparent;
   cursor:pointer;
   padding:2px;
+  min-width:44px;
+  min-height:44px;
+  display:grid;
+  place-items:center;
   color:#785a3240;
   transition:color .15s ease}
 .bk-day-checkin-rating button.is-active {
@@ -2670,7 +2674,7 @@ to {
   display:flex;
   align-items:center;
   justify-content:space-between;
-  padding:0 16px;
+  padding:env(safe-area-inset-top) 16px 0 16px;
   z-index:10;
   background:linear-gradient(180deg,rgba(247,241,224,.9),transparent);
   -webkit-backdrop-filter:blur(6px);
@@ -2705,8 +2709,8 @@ to {
 :root[data-theme=dark] .book-topbar-title {
   color:#e8dfc8}
 .book-theme-btn {
-  width:32px;
-  height:32px;
+  width:44px;
+  height:44px;
   border:none;
   border-radius:50%;
   background:transparent;
@@ -2880,7 +2884,9 @@ to {
 .book-nav-next {
   right:12px}
 .book-topbar {
-  padding:0 10px}
+  padding:env(safe-area-inset-top) 10px 0 10px}
+.book-toc-btn {
+  min-height:44px}
 .book-page-frame {
   padding:14px 12px 16px}
 .book-page-margin {
@@ -2891,7 +2897,7 @@ to {
 .bk-symptoms {
   gap:8px}
 .bk-symptom-chip {
-  min-height:36px;
+  min-height:44px;
   padding:8px 12px;
   font-size:13px;
   border-radius:18px}
@@ -2937,6 +2943,22 @@ to {
   letter-spacing:8px}
 .bk-meridian-name {
   font-size:24px}
+.book-toc-close {
+  min-width:44px;
+  min-height:44px;
+  display:grid;
+  place-items:center}
+.book-toc-item {
+  min-height:44px;
+  display:flex;
+  align-items:center}
+.bk-checkin-chip {
+  min-height:44px}
+.bk-day-checkin-save {
+  min-height:44px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center}
 }
 .export-report-hidden {
   position:fixed;
